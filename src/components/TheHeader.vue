@@ -8,20 +8,13 @@ defineProps({
 </script>
 
 <template>
-  <div class="greetings">
-    <h1 class="green">{{ msg }}</h1>
-    <p class="lead">
-      Bem-vindo ao CommitDone! Sua branch de tarefas está esperando por um push de produtividade 💻🚀!
-    </p>
-  </div>
+  <h1 class="text-center"><strong>{{ msg }}</strong></h1>
+  <p class="lead">
+    Bem-vindo ao CommitDone! Sua branch de tarefas está esperando por um push de produtividade 💻🚀!
+  </p>
 </template>
 
 <style scoped>
-.green {
-  color: #198754;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
 
 .lead {
   font-size: 1.25rem;
