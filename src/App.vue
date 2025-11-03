@@ -1,7 +1,7 @@
 <script setup>
 import TheHeader from './components/TheHeader.vue'
 import TheTask from './components/TheTask.vue';
-import TheProgress from './components/TheProgress.vue';
+
 </script>
 
 <template>
@@ -13,7 +13,7 @@ import TheProgress from './components/TheProgress.vue';
               <TheHeader msg="CommitDone" />
             </div>
             <div class="col-auto">
-              <img class="logo mt-5" alt="CommitDone logo" id="logo" src="./assets/logo.png" width="125" height="125" />
+              <img class="logo mt-5" alt="CommitDone logo" id="logo" src="./assets/logo.png" width="50" height="50" />
             </div>
           </div>
       </div>
@@ -21,14 +21,12 @@ import TheProgress from './components/TheProgress.vue';
     <main class="grow d-flex align-items-center justify-content-center py-0">
       <TheTask />
     </main>
-
-   <TheProgress/>
   </div>
 </template>
 
 <style>
 html,body{
-  background-color: #acdeb2;
+  background-color: #bfe3c0;
   color: black;
   margin: 0;
   padding: 0;

@@ -1,84 +1,121 @@
 <script setup>
+import { ref, onMounted } from 'vue';
+import TheProgress from './TheProgress.vue'; 
+
+// ✅ Arrays reativos separados para pendentes e concluídas
+const pendingTasks = ref([]);
+const completedTasks = ref([]);
+
 function saveTask() {
   let titleTask = document.getElementById("task").value;
   let priorityTask = document.getElementById("priority").value;
   let dateTimeTask = document.getElementById("date-time").value;
   let descriptionTask = document.getElementById("description").value;
 
-  // ✅ VALIDAÇÃO CORRIGIDA - verifica se está vazio ou só espaços
+  // ✅ VALIDAÇÃO
   if (!titleTask.trim() || !dateTimeTask.trim()) {
     alert("Informe os campos necessários (Atividade e Data/Hora)!");
     return;
   }
 
-  // ✅ SALVAR NO LOCALSTORAGE
-  localStorage.setItem("task", titleTask);
-  localStorage.setItem("priority", priorityTask);
-  localStorage.setItem("date-time", dateTimeTask);
-  localStorage.setItem("description", descriptionTask);
+  // ✅ CRIAR NOVA TAREFA COM ID ÚNICO
+  const newTask = {
+    id: Date.now(),
+    title: titleTask,
+    priority: priorityTask,
+    dateTime: dateTimeTask,
+    description: descriptionTask,
+    completed: false,
+    createdAt: new Date().toISOString()
+  };
+
+  // ✅ CARREGAR TAREFAS EXISTENTES DO LOCALSTORAGE
+  const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  
+  // ✅ ADICIONAR NOVA TAREFA NO INÍCIO DO ARRAY (para aparecer à direita)
+  existingTasks.unshift(newTask);
+  
+  // ✅ SALVAR ARRAY ATUALIZADO NO LOCALSTORAGE
+  localStorage.setItem("tasks", JSON.stringify(existingTasks));
 
   alert("Atividade adicionada com sucesso!");
 
-  // ✅ FECHAR MODAL DEPOIS DE SALVAR
-  // eslint-disable-next-line no-undef
-  const modal = bootstrap.Modal.getInstance(document.getElementById("meuModal"));
+  // ✅ LIMPAR CAMPOS DO MODAL
+  document.getElementById("task").value = "";
+  document.getElementById("priority").value = "0";
+  document.getElementById("date-time").value = "";
+  document.getElementById("description").value = "";
+
+  // ✅ FECHAR MODAL
+  const modal = bootstrap.Modal.getInstance(document.getElementById("modalSave"));
   modal.hide();
 
-  // ✅ MOSTRAR A TAREFA SALVA
-  showTask();
+  // ✅ ATUALIZAR LISTA DE TAREFAS
+  loadTasks();
 }
 
-function showTask(){
-  // ✅ PEGAR OS ELEMENTOS CORRETOS (onde vai mostrar os dados)
-  let titleElement = document.getElementById("title-task");
-  let priorityElement = document.getElementById("priori-task");
-  let dateTimeElement = document.getElementById("time-task");
-  let descriptionElement = document.getElementById("descript-task");
+function loadTasks() {
+  // ✅ CARREGAR TAREFAS DO LOCALSTORAGE
+  const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  
+  // ✅ SEPARAR TAREFAS PENDENTES E CONCLUÍDAS
+  pendingTasks.value = savedTasks.filter(task => !task.completed);
+  completedTasks.value = savedTasks.filter(task => task.completed);
+}
 
-  // ✅ PEGAR VALORES DO LOCALSTORAGE
-  let savedTask = localStorage.getItem("task");
-  let savedPriority = localStorage.getItem("priority");
-  let savedDateTime = localStorage.getItem("date-time");
-  let savedDescription = localStorage.getItem("description");
+function getPriorityText(priorityValue) {
+  const priorities = {
+    "0": "Sem prioridade",
+    "1": "Urgente", 
+    "2": "Importante",
+    "3": "Normal"
+  };
+  return priorities[priorityValue] || "Não definida";
+}
 
-  // ✅ CONVERTER PRIORIDADE NUMÉRICA EM TEXTO
-  function getPriorityText(priorityValue) {
-    const priorities = {
-      "0": "Sem prioridade",
-      "1": "Urgente", 
-      "2": "Importante",
-      "3": "Normal"
-    };
-    return priorities[priorityValue] || "Não definida";
-  }
+function getPriorityBadgeClass(priorityValue) {
+  const priorityClasses = {
+    "0": "bg-secondary",
+    "1": "bg-danger",
+    "2": "bg-warning", 
+    "3": "bg-info"
+  };
+  return priorityClasses[priorityValue] || "bg-secondary";
+}
 
-  // ✅ ATUALIZAR OS ELEMENTOS SE HOUVER DADOS
-  if (savedTask && savedTask.trim() !== "") {
-    titleElement.textContent = savedTask;
-    priorityElement.textContent = `Prioridade: ${getPriorityText(savedPriority)}`;
-    dateTimeElement.textContent = `Data/Hora: ${savedDateTime || 'Não definida'}`;
-    descriptionElement.textContent = `Descrição: ${savedDescription || 'Nenhuma descrição'}`;
-  } else {
-    // ✅ MANTER MENSAGEM PADRÃO SE NÃO HOUVER DADOS
-    titleElement.textContent = "Nenhuma atividade ainda";
-    priorityElement.textContent = "Dê prioridade a você...";
-    dateTimeElement.textContent = "No seu tempo e na sua hora.";
-    descriptionElement.textContent = "Que tal adicionar uma nova atividade?";
+function completeTask(taskId) {
+  // ✅ MARCAR TAREFA COMO CONCLUÍDA
+  const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const updatedTasks = existingTasks.map(task => 
+    task.id === taskId ? { ...task, completed: !task.completed } : task
+  );
+  
+  localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+  loadTasks();
+}
+
+function deleteTask(taskId) {
+  // ✅ REMOVER TAREFA
+  if (confirm("Tem certeza que deseja excluir esta tarefa?")) {
+    const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    const updatedTasks = existingTasks.filter(task => task.id !== taskId);
+    
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    loadTasks();
   }
 }
 
-// ✅ CHAMAR showTask QUANDO O COMPONENTE FOR MONTADO
-import { onMounted } from 'vue';
+// ✅ CARREGAR TAREFAS QUANDO O COMPONENTE FOR MONTADO
 onMounted(() => {
-  showTask();
+  loadTasks();
 });
 </script>
 
 <template>
   <div class="d-flex flex-column align-items-center mt-0 w-100">
     <!-- Botão que irá abrir o modal -->
-    <button type="button" class="btn btn-success btn-lg mt-0"
-            data-bs-toggle="modal" data-bs-target="#meuModal">
+    <button type="button" class="btn btn-success btn-lg mt-0 mb-4"
+            data-bs-toggle="modal" data-bs-target="#modalSave">
       Adicionar atividade
     </button>
 
@@ -154,20 +191,121 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Card para mostrar as tarefas -->
-    <div class="container mt-3">
-      <hr class="my-4">
-      <div class="card mx-auto" style="max-width: 400px;">
-        <div class="card-body text-center">
-          <h4 class="card-title" id="title-task">Nenhuma atividade ainda</h4>
-          <div class="card-text">
-            <p id="priori-task">Dê prioridade a você...</p>
-            <p id="time-task">No seu tempo e na sua hora.</p>
-            <p id="descript-task">Que tal adicionar uma nova atividade?</p>
+    <!-- ✅ BARRA DE PROGRESSO DINÂMICA -->
+    <TheProgress 
+      :completed-tasks="completedTasks"
+      :pending-tasks="pendingTasks"
+    />
+
+    <!-- Área para mostrar as tarefas -->
+    <div class="container mt-4 w-100">
+      
+      <!-- SEÇÃO 1: TAREFAS PENDENTES (Grid vertical) -->
+      <div v-if="pendingTasks.length > 0" class="mb-5">
+        <h3 class="text-center mb-4">Tarefas Pendentes</h3>
+        <div class="row justify-content-start g-3">
+          <div v-for="task in pendingTasks" :key="task.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
+            <div class="card h-100 task-card">
+              <div class="card-body">
+                <!-- Badge de prioridade -->
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <span class="badge" :class="getPriorityBadgeClass(task.priority)">
+                    {{ getPriorityText(task.priority) }}
+                  </span>
+                  <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
+                </div>
+                
+                <!-- Título da tarefa -->
+                <h5 class="card-title">
+                  {{ task.title }}
+                </h5>
+                
+                <!-- Detalhes da tarefa -->
+                <div class="card-text">
+                  <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
+                  <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição' }}</small></p>
+                </div>
+
+                <!-- Botões de ação -->
+                <div class="d-flex justify-content-between pt-2">
+                  <button 
+                    class="btn btn-sm btn-success"
+                    @click="completeTask(task.id)"
+                  >
+                    Concluir
+                  </button>
+                  <button 
+                    class="btn btn-sm btn-danger" 
+                    @click="deleteTask(task.id)"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="d-flex justify-content-center pt-3 gap-3">
-            <button class="btn btn-warning">Editar atividade</button>
-            <button class="btn btn-success">Concluir atividade</button>
+        </div>
+      </div>
+
+      <!-- SEÇÃO 2: TAREFAS CONCLUÍDAS (Rolagem horizontal) -->
+      <div v-if="completedTasks.length > 0" class="mb-5">
+        <h3 class="text-center mb-4">Tarefas Concluídas</h3>
+        <div class="horizontal-scroll-container">
+          <div class="horizontal-scroll-content">
+            <div v-for="task in completedTasks" :key="task.id" class="horizontal-card">
+              <div class="card h-100 completed-task">
+                <div class="card-body">
+                  <!-- Badge de prioridade -->
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-success">
+                      Concluída
+                    </span>
+                    <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
+                  </div>
+                  
+                  <!-- Título da tarefa -->
+                  <h6 class="card-title text-decoration-line-through">
+                    {{ task.title }}
+                  </h6>
+                  
+                  <!-- Detalhes da tarefa -->
+                  <div class="card-text">
+                    <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
+                    <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição' }}</small></p>
+                  </div>
+
+                  <!-- Botões de ação -->
+                  <div class="d-flex justify-content-between pt-2">
+                    <button 
+                      class="btn btn-sm btn-warning"
+                      @click="completeTask(task.id)"
+                    >
+                      Reabrir
+                    </button>
+                    <button 
+                      class="btn btn-sm btn-danger" 
+                      @click="deleteTask(task.id)"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensagem quando não há tarefas -->
+      <div v-if="pendingTasks.length === 0 && completedTasks.length === 0" class="text-center">
+        <div class="card mx-auto" style="max-width: 400px;">
+          <div class="card-body text-center">
+            <h4 class="card-title">Nenhuma atividade ainda</h4>
+            <div class="card-text">
+              <p>Dê prioridade a você...</p>
+              <p>No seu tempo e na sua hora.</p>
+              <p>Que tal adicionar uma nova atividade?</p>
+            </div>
           </div>
         </div>
       </div>
@@ -176,4 +314,66 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Estilos para as tarefas pendentes */
+.task-card {
+  transition: transform 0.2s;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Estilos para a rolagem horizontal das tarefas concluídas */
+.horizontal-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 10px 0;
+  white-space: nowrap;
+}
+
+.horizontal-scroll-content {
+  display: inline-flex;
+  gap: 15px;
+  padding: 0 10px;
+}
+
+.horizontal-card {
+  display: inline-block;
+  width: 280px; /* Largura fixa para os cards horizontais */
+  flex-shrink: 0;
+}
+
+/* Estilo para tarefas concluídas */
+.completed-task {
+  opacity: 0.85;
+  border-left: 4px solid #198754;
+}
+
+/* Personalizar a barra de scroll */
+.horizontal-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Garantir que o texto dentro dos cards horizontais quebre */
+.horizontal-card .card-text,
+.horizontal-card .card-title {
+  white-space: normal;
+  word-wrap: break-word;
+}
 </style>
