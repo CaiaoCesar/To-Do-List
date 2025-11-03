@@ -1,28 +1,77 @@
 <script setup>
-  function saveTask() {
-    let titleTask = document.getElementById("task").value;
-    let priorityTask = document.getElementById("priority").value;
-    let dateTimeTask = document.getElementById("date-time").value;
-    let descriptionTask = document.getElementById("description").value;
+function saveTask() {
+  let titleTask = document.getElementById("task").value;
+  let priorityTask = document.getElementById("priority").value;
+  let dateTimeTask = document.getElementById("date-time").value;
+  let descriptionTask = document.getElementById("description").value;
 
-    localStorage.setItem("task", titleTask);
-    localStorage.setItem("priority", priorityTask);
-    localStorage.setItem("date-time", dateTimeTask);
-    localStorage.setItem("description", descriptionTask);
-
-    alert("Atividade adicionada com sucesso!");
-
-    // eslint-disable-next-line no-undef
-    const modal = new bootstrap.Modal.getInstance(document.getElementById("meuModal"));
-    modal.hide();
-
-    showTask();
+  // ✅ VALIDAÇÃO CORRIGIDA - verifica se está vazio ou só espaços
+  if (!titleTask.trim() || !dateTimeTask.trim()) {
+    alert("Informe os campos necessários (Atividade e Data/Hora)!");
+    return;
   }
 
-  function showTask(){
-    let taskMsg = document.getElementById("task-save");
-    taskMsg.textContent = localStorage.getItem("task");
+  // ✅ SALVAR NO LOCALSTORAGE
+  localStorage.setItem("task", titleTask);
+  localStorage.setItem("priority", priorityTask);
+  localStorage.setItem("date-time", dateTimeTask);
+  localStorage.setItem("description", descriptionTask);
+
+  alert("Atividade adicionada com sucesso!");
+
+  // ✅ FECHAR MODAL DEPOIS DE SALVAR
+  // eslint-disable-next-line no-undef
+  const modal = bootstrap.Modal.getInstance(document.getElementById("meuModal"));
+  modal.hide();
+
+  // ✅ MOSTRAR A TAREFA SALVA
+  showTask();
+}
+
+function showTask(){
+  // ✅ PEGAR OS ELEMENTOS CORRETOS (onde vai mostrar os dados)
+  let titleElement = document.getElementById("title-task");
+  let priorityElement = document.getElementById("priori-task");
+  let dateTimeElement = document.getElementById("time-task");
+  let descriptionElement = document.getElementById("descript-task");
+
+  // ✅ PEGAR VALORES DO LOCALSTORAGE
+  let savedTask = localStorage.getItem("task");
+  let savedPriority = localStorage.getItem("priority");
+  let savedDateTime = localStorage.getItem("date-time");
+  let savedDescription = localStorage.getItem("description");
+
+  // ✅ CONVERTER PRIORIDADE NUMÉRICA EM TEXTO
+  function getPriorityText(priorityValue) {
+    const priorities = {
+      "0": "Sem prioridade",
+      "1": "Urgente", 
+      "2": "Importante",
+      "3": "Normal"
+    };
+    return priorities[priorityValue] || "Não definida";
   }
+
+  // ✅ ATUALIZAR OS ELEMENTOS SE HOUVER DADOS
+  if (savedTask && savedTask.trim() !== "") {
+    titleElement.textContent = savedTask;
+    priorityElement.textContent = `Prioridade: ${getPriorityText(savedPriority)}`;
+    dateTimeElement.textContent = `Data/Hora: ${savedDateTime || 'Não definida'}`;
+    descriptionElement.textContent = `Descrição: ${savedDescription || 'Nenhuma descrição'}`;
+  } else {
+    // ✅ MANTER MENSAGEM PADRÃO SE NÃO HOUVER DADOS
+    titleElement.textContent = "Nenhuma atividade ainda";
+    priorityElement.textContent = "Dê prioridade a você...";
+    dateTimeElement.textContent = "No seu tempo e na sua hora.";
+    descriptionElement.textContent = "Que tal adicionar uma nova atividade?";
+  }
+}
+
+// ✅ CHAMAR showTask QUANDO O COMPONENTE FOR MONTADO
+import { onMounted } from 'vue';
+onMounted(() => {
+  showTask();
+});
 </script>
 
 <template>
@@ -34,18 +83,14 @@
     </button>
 
     <!-- Modal -->
-    <div id="meuModal" class="modal fade" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered"> <!-- Added modal-dialog-centered -->
-
-        <!-- Conteúdo do modal-->
+    <div id="modalSave" class="modal fade" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-          <!-- Cabeçalho do modal -->
           <div class="modal-header">
             <h3 class="modal-title">Informações da atividade</h3>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
 
-          <!-- Corpo do modal - CORRIGIDO -->
           <div class="modal-body">
             <!-- Input -->
             <div class="mb-3">
@@ -69,7 +114,7 @@
                 <span class="input-group-text">
                   <FontAwesomeIcon icon="fa-solid fa-flag"/>
                 </span>
-                <select class="form-select" name="priority" id="priority" required>
+                <select class="form-select" name="priority" id="priority">
                   <option value="0">Sem prioridade</option>
                   <option value="1">Urgente</option>
                   <option value="2">Importante</option>
@@ -101,40 +146,32 @@
             </div>
           </div>
 
-          <!-- Rodapé do modal -->
           <div class="modal-footer">
             <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-primary" @click="saveTask()">Salvar Alterações</button>
           </div>
-
         </div>
-
       </div>
     </div>
+
+    <!-- Card para mostrar as tarefas -->
     <div class="container mt-3">
       <hr class="my-4">
-      <div class="card" style="width:400px">
-        <!-- <img class="card-img-top" src="img_avatar1.png" alt="Card image" style="width:100%"> -->
-        <div class="card-body">
+      <div class="card mx-auto" style="max-width: 400px;">
+        <div class="card-body text-center">
           <h4 class="card-title" id="title-task">Nenhuma atividade ainda</h4>
           <div class="card-text">
             <p id="priori-task">Dê prioridade a você...</p>
             <p id="time-task">No seu tempo e na sua hora.</p>
             <p id="descript-task">Que tal adicionar uma nova atividade?</p>
           </div>
-          <div class="justify-content-center d-flex pt-3 mx-auto gap-5">
-              <button class="btn btn-warning">Editar atividade</button>
-              <button class="btn btn-success">Concluir atividade</button>
+          <div class="d-flex justify-content-center pt-3 gap-3">
+            <button class="btn btn-warning">Editar atividade</button>
+            <button class="btn btn-success">Concluir atividade</button>
           </div>
         </div>
       </div>
     </div>
-
-    <p class="mt-3">
-      <strong>
-        <span id="task-save"></span>
-      </strong>
-    </p>
   </div>
 </template>
 
