@@ -73,7 +73,7 @@ onMounted(() => {
 <template>
   <div class="container mt-4">
     <!-- Alert dinâmico -->
-    <div class="alert" :class="`alert-${getAlertMessage().type}`" role="alert">
+    <div class="alert text-center" :class="`alert-${getAlertMessage().type}`" role="alert">
       <strong>{{ getAlertMessage().message }}</strong>
     </div>
 

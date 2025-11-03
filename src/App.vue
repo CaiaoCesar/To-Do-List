@@ -9,7 +9,7 @@ import TheTask from './components/TheTask.vue';
     <header class="header py-4">
       <div class="container">
          <div class="row align-items-center justify-content-center text-center">
-            <div class="col-auto">
+            <div class="col-auto color-#207178" style="color: #207178">
               <TheHeader msg="CommitDone" />
             </div>
             <div class="col-auto">

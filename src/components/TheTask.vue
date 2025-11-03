@@ -2,7 +2,10 @@
 import { ref, onMounted } from 'vue';
 import TheProgress from './TheProgress.vue'; 
 
-// ✅ Arrays reativos separados para pendentes e concluídas
+import Swal from 'sweetalert2'
+import confetti from 'canvas-confetti';
+
+// ✅ CORREÇÃO: Use reactive ou garanta a reatividade correta
 const pendingTasks = ref([]);
 const completedTasks = ref([]);
 
@@ -14,7 +17,12 @@ function saveTask() {
 
   // ✅ VALIDAÇÃO
   if (!titleTask.trim() || !dateTimeTask.trim()) {
-    alert("Informe os campos necessários (Atividade e Data/Hora)!");
+    Swal.fire({
+      title: "Atenção!",
+      text: "Informe os campos necessários (Atividade e Data/Hora)!",
+      icon: "warning",
+      width: 400
+    });
     return;
   }
 
@@ -32,13 +40,19 @@ function saveTask() {
   // ✅ CARREGAR TAREFAS EXISTENTES DO LOCALSTORAGE
   const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
   
-  // ✅ ADICIONAR NOVA TAREFA NO INÍCIO DO ARRAY (para aparecer à direita)
+  // ✅ ADICIONAR NOVA TAREFA NO INÍCIO DO ARRAY
   existingTasks.unshift(newTask);
   
   // ✅ SALVAR ARRAY ATUALIZADO NO LOCALSTORAGE
   localStorage.setItem("tasks", JSON.stringify(existingTasks));
 
-  alert("Atividade adicionada com sucesso!");
+  Swal.fire({
+    title: "Cadastro Efetuado!",
+    text: "Sua tarefa foi salva com sucesso.",
+    icon: "success",
+    width: 300,  
+    padding: '2em'
+  });
 
   // ✅ LIMPAR CAMPOS DO MODAL
   document.getElementById("task").value = "";
@@ -48,9 +62,11 @@ function saveTask() {
 
   // ✅ FECHAR MODAL
   const modal = bootstrap.Modal.getInstance(document.getElementById("modalSave"));
-  modal.hide();
+  if (modal) {
+    modal.hide();
+  }
 
-  // ✅ ATUALIZAR LISTA DE TAREFAS
+  // ✅ ATUALIZAR LISTA DE TAREFAS - GARANTINDO REATIVIDADE
   loadTasks();
 }
 
@@ -58,7 +74,7 @@ function loadTasks() {
   // ✅ CARREGAR TAREFAS DO LOCALSTORAGE
   const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
   
-  // ✅ SEPARAR TAREFAS PENDENTES E CONCLUÍDAS
+  // ✅ CORREÇÃO: Atribuir os valores diretamente para garantir reatividade
   pendingTasks.value = savedTasks.filter(task => !task.completed);
   completedTasks.value = savedTasks.filter(task => task.completed);
 }
@@ -83,32 +99,119 @@ function getPriorityBadgeClass(priorityValue) {
   return priorityClasses[priorityValue] || "bg-secondary";
 }
 
+function triggerCelebration() {
+  // Dispara os confetes
+  confetti({
+    particleCount: 150,
+    spread: 70,
+    origin: { y: 0.6 },
+    colors: ['#198754', '#20c997', '#ffc107', '#fd7e14', '#e83e8c']
+  });
+
+  // SweetAlert personalizado
+  Swal.fire({
+    title: '🎉 Missão Cumprida!',
+    html: `
+      <div style="text-align: center;">
+        <p style="font-size: 1.2rem; margin-bottom: 1rem;"><strong>Parabéns!</strong> <br>Você concluiu mais uma tarefa!</p>
+        <div style="font-size: 3rem;">🏆</div>
+      </div>
+    `,
+    width: 400,
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    showConfirmButton: true,
+    confirmButtonText: 'Continuar',
+    confirmButtonColor: '#ffc107',
+    customClass: {
+      popup: 'celebratory-popup',
+      title: 'celebratory-title'
+    }
+  });
+}
+
 function completeTask(taskId) {
-  // ✅ MARCAR TAREFA COMO CONCLUÍDA
+  // ✅ CONCLUIR TAREFA (de pendente para concluída)
   const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
   const updatedTasks = existingTasks.map(task => 
-    task.id === taskId ? { ...task, completed: !task.completed } : task
+    task.id === taskId ? { ...task, completed: true } : task
   );
   
   localStorage.setItem("tasks", JSON.stringify(updatedTasks));
   loadTasks();
+  triggerCelebration(); // Só comemora quando CONCLUI
+}
+
+function triggerReopenMessage() {
+  Swal.fire({
+    title: '↩️ Tarefa Reaberta',
+    html: `
+      <div style="text-align: center;">
+        <p style="font-size: 1.1rem; margin-bottom: 1rem;">
+          A tarefa foi movida de volta para <strong>pendentes</strong>.
+        </p>
+        <div style="font-size: 2.5rem;">📋</div>
+      </div>
+    `,
+    width: 380,
+    background: '#e3f2fd',
+    color: '#1976d2',
+    showConfirmButton: true,
+    confirmButtonText: 'Entendi',
+    confirmButtonColor: '#1976d2',
+    timer: 2500,
+    timerProgressBar: true
+  });
+}
+
+function reopenTask(taskId) {
+  // ✅ REABRIR TAREFA (de concluída para pendente)
+  const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const updatedTasks = existingTasks.map(task => 
+    task.id === taskId ? { ...task, completed: false } : task
+  );
+  
+  localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+  loadTasks();
+  triggerReopenMessage(); // Mensagem simples para reabertura
 }
 
 function deleteTask(taskId) {
   // ✅ REMOVER TAREFA
-  if (confirm("Tem certeza que deseja excluir esta tarefa?")) {
+
+Swal.fire({
+  title: "Quer excluir essa tarefa?",
+  showDenyButton: true,
+  showCancelButton: false,
+  confirmButtonText: "Sim quero.",
+  denyButtonText: `Melhor não.`
+}).then((result) => {
+  if (result.isConfirmed) {
+    Swal.fire("Tarefa Excluída!", "", "success");
     const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
     const updatedTasks = existingTasks.filter(task => task.id !== taskId);
     
     localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-    loadTasks();
+    loadTasks(); // ✅ CHAMAR loadTasks PARA ATUALIZAR A INTERFACE
+  } else if (result.isDenied) {
+    Swal.fire("Tarefa Mantida!", "", "info");
   }
+});
 }
 
 // ✅ CARREGAR TAREFAS QUANDO O COMPONENTE FOR MONTADO
 onMounted(() => {
   loadTasks();
 });
+
+// ✅ OPCIONAL: Adicionar listener para atualizações em outras abas
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'tasks') {
+      loadTasks();
+    }
+  });
+}
 </script>
 
 <template>
@@ -184,7 +287,7 @@ onMounted(() => {
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
             <button type="button" class="btn btn-primary" @click="saveTask()">Salvar Alterações</button>
           </div>
         </div>
@@ -202,7 +305,10 @@ onMounted(() => {
       
       <!-- SEÇÃO 1: TAREFAS PENDENTES (Grid vertical) -->
       <div v-if="pendingTasks.length > 0" class="mb-5">
-        <h3 class="text-center mb-4">Tarefas Pendentes</h3>
+        <h3 class="text-center mb-4">
+          <FontAwesomeIcon icon="fa-solid fa-clock" class="me-2 text-warning" />
+          Tarefas Pendentes:
+        </h3>
         <div class="row justify-content-start g-3">
           <div v-for="task in pendingTasks" :key="task.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
             <div class="card h-100 task-card">
@@ -249,7 +355,10 @@ onMounted(() => {
 
       <!-- SEÇÃO 2: TAREFAS CONCLUÍDAS (Rolagem horizontal) -->
       <div v-if="completedTasks.length > 0" class="mb-5">
-        <h3 class="text-center mb-4">Tarefas Concluídas</h3>
+        <h3 class="text-center mb-4">
+          <FontAwesomeIcon icon="fa-solid fa-check-circle" class="me-2 text-success" />
+          Tarefas Concluídas:
+        </h3>
         <div class="horizontal-scroll-container">
           <div class="horizontal-scroll-content">
             <div v-for="task in completedTasks" :key="task.id" class="horizontal-card">
@@ -278,7 +387,7 @@ onMounted(() => {
                   <div class="d-flex justify-content-between pt-2">
                     <button 
                       class="btn btn-sm btn-warning"
-                      @click="completeTask(task.id)"
+                      @click="reopenTask(task.id)"
                     >
                       Reabrir
                     </button>
@@ -314,7 +423,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Estilos para as tarefas pendentes */
+/* Seus estilos permanecem os mesmos */
 .task-card {
   transition: transform 0.2s;
 }
@@ -324,7 +433,6 @@ onMounted(() => {
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* Estilos para a rolagem horizontal das tarefas concluídas */
 .horizontal-scroll-container {
   width: 100%;
   overflow-x: auto;
@@ -341,17 +449,15 @@ onMounted(() => {
 
 .horizontal-card {
   display: inline-block;
-  width: 280px; /* Largura fixa para os cards horizontais */
+  width: 280px;
   flex-shrink: 0;
 }
 
-/* Estilo para tarefas concluídas */
 .completed-task {
   opacity: 0.85;
   border-left: 4px solid #198754;
 }
 
-/* Personalizar a barra de scroll */
 .horizontal-scroll-container::-webkit-scrollbar {
   height: 8px;
 }
@@ -370,7 +476,6 @@ onMounted(() => {
   background: #555;
 }
 
-/* Garantir que o texto dentro dos cards horizontais quebre */
 .horizontal-card .card-text,
 .horizontal-card .card-title {
   white-space: normal;
