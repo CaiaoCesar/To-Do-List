@@ -1,6 +1,7 @@
 <script setup>
 import TheHeader from './components/TheHeader.vue'
 import TheTask from './components/TheTask.vue';
+import TheFooter from './components/TheFooter.vue';
 </script>
 
 <template>
@@ -23,6 +24,8 @@ import TheTask from './components/TheTask.vue';
         <TheTask />
       </div>
     </main>
+
+    <TheFooter/>
   </div>
 </template>
 
