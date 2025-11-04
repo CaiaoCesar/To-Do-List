@@ -1,52 +1,82 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import TheProgress from './TheProgress.vue'; 
-
+import { ref, onMounted, nextTick } from 'vue';
+import TheProgress from './TheProgress.vue';
 import Swal from 'sweetalert2'
 import confetti from 'canvas-confetti';
 
-// ✅ CORREÇÃO: Use reactive ou garanta a reatividade correta
 const pendingTasks = ref([]);
 const completedTasks = ref([]);
 
 function saveTask() {
-  let titleTask = document.getElementById("task").value;
-  let priorityTask = document.getElementById("priority").value;
-  let dateTimeTask = document.getElementById("date-time").value;
-  let descriptionTask = document.getElementById("description").value;
+  const titleTask = document.getElementById("task").value;
+  const priorityTask = document.getElementById("priority").value;
+  const dateTimeTask = document.getElementById("date-time").value;
+  const descriptionTask = document.getElementById("description").value;
 
   // ✅ VALIDAÇÃO
-  if (!titleTask.trim() || !dateTimeTask.trim()) {
+  if (!titleTask || !titleTask.trim()) {
     Swal.fire({
       title: "Atenção!",
-      text: "Informe os campos necessários (Atividade e Data/Hora)!",
+      text: "Informe o título da atividade!",
       icon: "warning",
       width: 400
     });
     return;
   }
 
-  // ✅ CRIAR NOVA TAREFA COM ID ÚNICO
+  if (!dateTimeTask) {
+    Swal.fire({
+      title: "Atenção!",
+      text: "Informe a data e hora para realizar a atividade!",
+      icon: "warning",
+      width: 400
+    });
+    return;
+  }
+
+
+  // ✅ CRIAR NOVA TAREFA
   const newTask = {
     id: Date.now(),
-    title: titleTask,
+    title: titleTask.trim(),
     priority: priorityTask,
     dateTime: dateTimeTask,
-    description: descriptionTask,
+    description: descriptionTask.trim(),
     completed: false,
     createdAt: new Date().toISOString()
   };
 
-   try {
+  try {
     // ✅ SALVAR NO LOCALSTORAGE
     const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
     existingTasks.unshift(newTask);
     localStorage.setItem("tasks", JSON.stringify(existingTasks));
 
-    // ✅ FECHAR MODAL IMEDIATAMENTE
-    const modal = bootstrap.Modal.getInstance(document.getElementById("modalSave"));
-    if (modal) {
-      modal.hide();
+    // ✅ CORREÇÃO SIMPLES: Fechar modal usando método nativo
+    const modalElement = document.getElementById("modalSave");
+    if (modalElement) {
+      // ✅ Método mais simples: usar o data-bs-dismiss
+      const bootstrap = window.bootstrap;
+      if (bootstrap) {
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+          modal.hide();
+        }
+      } else {
+        // ✅ Fallback: Simular clique no botão fechar
+        const closeButton = modalElement.querySelector('[data-bs-dismiss="modal"]');
+        if (closeButton) {
+          closeButton.click();
+        } else {
+          // ✅ Último fallback: esconder manualmente
+          modalElement.classList.remove('show');
+          modalElement.style.display = 'none';
+          document.body.classList.remove('modal-open');
+          const backdrop = document.querySelector('.modal-backdrop');
+          if (backdrop) backdrop.remove();
+        }
+      }
     }
 
     // ✅ LIMPAR CAMPOS DO MODAL
@@ -55,20 +85,23 @@ function saveTask() {
     document.getElementById("date-time").value = "";
     document.getElementById("description").value = "";
 
-   // ✅ ATUALIZAR A LISTA
-    loadTasks();
+    // ✅ ATUALIZAR A LISTA
+    nextTick(() => {
+      loadTasks();
+    });
 
-    // ✅ MOSTRAR CONFIRMAÇÃO APÓS ATUALIZAR
+    // ✅ MOSTRAR CONFIRMAÇÃO
     Swal.fire({
       title: "✅ Tarefa Salva!",
       text: "Sua tarefa foi adicionada com sucesso.",
       icon: "success",
       width: 320,
-      timer: 2000, 
+      timer: 2000,
       showConfirmButton: false
     });
-  } catch (error) {
-    console.error('Erro ao salvar tarefa:', error);
+
+
+  } catch {
     Swal.fire({
       title: "Erro!",
       text: "Não foi possível salvar a tarefa.",
@@ -76,22 +109,27 @@ function saveTask() {
       width: 400
     });
   }
-
 }
 
 function loadTasks() {
-  // ✅ CARREGAR TAREFAS DO LOCALSTORAGE
-  const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  
-  // ✅ CORREÇÃO: Atribuir os valores diretamente para garantir reatividade
-  pendingTasks.value = savedTasks.filter(task => !task.completed);
-  completedTasks.value = savedTasks.filter(task => task.completed);
+  try {
+    // ✅ CARREGAR TAREFAS DO LOCALSTORAGE
+    const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    // ✅ CORREÇÃO: Atribuir os valores diretamente para garantir reatividade
+    pendingTasks.value = savedTasks.filter(task => !task.completed);
+    completedTasks.value = savedTasks.filter(task => task.completed);
+
+  } catch {
+    pendingTasks.value = [];
+    completedTasks.value = [];
+  }
 }
 
 function getPriorityText(priorityValue) {
   const priorities = {
     "0": "Sem prioridade",
-    "1": "Urgente", 
+    "1": "Urgente",
     "2": "Importante",
     "3": "Normal"
   };
@@ -102,14 +140,13 @@ function getPriorityBadgeClass(priorityValue) {
   const priorityClasses = {
     "0": "bg-secondary",
     "1": "bg-danger",
-    "2": "bg-warning", 
+    "2": "bg-warning",
     "3": "bg-info"
   };
   return priorityClasses[priorityValue] || "bg-secondary";
 }
 
 function triggerCelebration() {
-  // Dispara os confetes
   confetti({
     particleCount: 150,
     spread: 70,
@@ -117,7 +154,6 @@ function triggerCelebration() {
     colors: ['#198754', '#20c997', '#ffc107', '#fd7e14', '#e83e8c']
   });
 
-  // SweetAlert personalizado
   Swal.fire({
     title: '🎉 Missão Cumprida!',
     html: `
@@ -131,24 +167,24 @@ function triggerCelebration() {
     color: 'white',
     showConfirmButton: true,
     confirmButtonText: 'Continuar',
-    confirmButtonColor: '#ffc107',
-    customClass: {
-      popup: 'celebratory-popup',
-      title: 'celebratory-title'
-    }
+    confirmButtonColor: '#ffc107'
   });
 }
 
 function completeTask(taskId) {
-  // ✅ CONCLUIR TAREFA (de pendente para concluída)
+
   const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  const updatedTasks = existingTasks.map(task => 
+  const updatedTasks = existingTasks.map(task =>
     task.id === taskId ? { ...task, completed: true } : task
   );
-  
+
   localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-  loadTasks();
-  triggerCelebration(); // Só comemora quando CONCLUI
+
+  // ✅ USAR nextTick PARA GARANTIR ATUALIZAÇÃO
+  nextTick(() => {
+    loadTasks();
+    triggerCelebration();
+  });
 }
 
 function triggerReopenMessage() {
@@ -174,38 +210,45 @@ function triggerReopenMessage() {
 }
 
 function reopenTask(taskId) {
-  // ✅ REABRIR TAREFA (de concluída para pendente)
+
   const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  const updatedTasks = existingTasks.map(task => 
+  const updatedTasks = existingTasks.map(task =>
     task.id === taskId ? { ...task, completed: false } : task
   );
-  
+
   localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-  loadTasks();
-  triggerReopenMessage(); // Mensagem simples para reabertura
+
+  // ✅ USAR nextTick PARA GARANTIR ATUALIZAÇÃO
+  nextTick(() => {
+    loadTasks();
+    triggerReopenMessage();
+  });
 }
 
 function deleteTask(taskId) {
-  // ✅ REMOVER TAREFA
 
-Swal.fire({
-  title: "Quer excluir essa tarefa?",
-  showDenyButton: true,
-  showCancelButton: false,
-  confirmButtonText: "Sim quero.",
-  denyButtonText: `Melhor não.`
-}).then((result) => {
-  if (result.isConfirmed) {
-    Swal.fire("Tarefa Excluída!", "", "success");
-    const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-    const updatedTasks = existingTasks.filter(task => task.id !== taskId);
-    
-    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-    loadTasks(); // ✅ CHAMAR loadTasks PARA ATUALIZAR A INTERFACE
-  } else if (result.isDenied) {
-    Swal.fire("Tarefa Mantida!", "", "info");
-  }
-});
+  Swal.fire({
+    title: "Quer excluir essa tarefa?",
+    showDenyButton: true,
+    showCancelButton: false,
+    confirmButtonText: "Sim quero.",
+    denyButtonText: `Melhor não.`
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      const updatedTasks = existingTasks.filter(task => task.id !== taskId);
+
+      localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+
+      // ✅ USAR nextTick PARA GARANTIR ATUALIZAÇÃO
+      nextTick(() => {
+        loadTasks();
+        Swal.fire("Tarefa Excluída!", "", "success");
+      });
+    } else if (result.isDenied) {
+      Swal.fire("Tarefa Mantida!", "", "info");
+    }
+  });
 }
 
 // ✅ CARREGAR TAREFAS QUANDO O COMPONENTE FOR MONTADO
@@ -226,8 +269,7 @@ if (typeof window !== 'undefined') {
 <template>
   <div class="d-flex flex-column align-items-center mt-0 w-100">
     <!-- Botão que irá abrir o modal -->
-    <button type="button" class="btn btn-success btn-lg mt-0 mb-4"
-            data-bs-toggle="modal" data-bs-target="#modalSave">
+    <button type="button" class="btn btn-success btn-lg mt-0 mb-4" data-bs-toggle="modal" data-bs-target="#modalSave">
       Adicionar atividade
     </button>
 
@@ -246,13 +288,10 @@ if (typeof window !== 'undefined') {
               <label class="form-label" for="task">Atividade:</label>
               <div class="input-group">
                 <span class="input-group-text">
-                  <FontAwesomeIcon icon="fa-solid fa-thumbtack"/>
+                  <FontAwesomeIcon icon="fa-solid fa-thumbtack" />
                 </span>
-                <input class="form-control"
-                    type="text"
-                    id="task"
-                    placeholder="Título da atividade que deseja realizar"
-                    required>
+                <input class="form-control" type="text" id="task" placeholder="Título da atividade que deseja realizar"
+                  required>
               </div>
             </div>
 
@@ -261,7 +300,7 @@ if (typeof window !== 'undefined') {
               <label for="priority" class="form-label">Nível de prioridade:</label>
               <div class="input-group">
                 <span class="input-group-text">
-                  <FontAwesomeIcon icon="fa-solid fa-flag"/>
+                  <FontAwesomeIcon icon="fa-solid fa-flag" />
                 </span>
                 <select class="form-select" name="priority" id="priority">
                   <option value="0">Sem prioridade</option>
@@ -277,7 +316,7 @@ if (typeof window !== 'undefined') {
               <label for="date-time" class="form-label">Data e Hora a realizar:</label>
               <div class="input-group">
                 <span class="input-group-text">
-                  <FontAwesomeIcon icon="fa-solid fa-calendar"/>
+                  <FontAwesomeIcon icon="fa-solid fa-calendar" />
                 </span>
                 <input class="form-control" type="datetime-local" id="date-time">
               </div>
@@ -288,9 +327,10 @@ if (typeof window !== 'undefined') {
               <label for="description" class="form-label">Descrição:</label>
               <div class="input-group">
                 <span class="input-group-text">
-                  <FontAwesomeIcon icon="fa-solid fa-align-left"/>
+                  <FontAwesomeIcon icon="fa-solid fa-align-left" />
                 </span>
-                <textarea class="form-control" id="description" rows="3" placeholder="Descreva o que deseja realizar (opcional)"></textarea>
+                <textarea class="form-control" id="description" rows="3"
+                  placeholder="Descreva o que deseja realizar (opcional)"></textarea>
               </div>
             </div>
           </div>
@@ -304,55 +344,41 @@ if (typeof window !== 'undefined') {
     </div>
 
     <!-- ✅ BARRA DE PROGRESSO DINÂMICA -->
-    <TheProgress 
-      :completed-tasks="completedTasks"
-      :pending-tasks="pendingTasks"
-    />
+    <TheProgress :completed-tasks="completedTasks" :pending-tasks="pendingTasks" />
 
     <!-- Área para mostrar as tarefas -->
     <div class="container mt-4 w-100">
-      
-      <!-- SEÇÃO 1: TAREFAS PENDENTES (Grid vertical) -->
+      <!-- SEÇÃO 1: TAREFAS PENDENTES -->
       <div v-if="pendingTasks.length > 0" class="mb-5">
         <h3 class="text-center mb-4">
           <FontAwesomeIcon icon="fa-solid fa-clock" class="me-2 text-warning" />
-          Tarefas Pendentes:
+          Tarefas Pendentes: {{ pendingTasks.length }}
         </h3>
         <div class="row justify-content-start g-3">
           <div v-for="task in pendingTasks" :key="task.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
             <div class="card h-100 task-card">
               <div class="card-body">
-                <!-- Badge de prioridade -->
                 <div class="d-flex justify-content-between align-items-start mb-2">
                   <span class="badge" :class="getPriorityBadgeClass(task.priority)">
                     {{ getPriorityText(task.priority) }}
                   </span>
                   <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
                 </div>
-                
-                <!-- Título da tarefa -->
-                <h5 class="card-title">
-                  {{ task.title }}
-                </h5>
-                
-                <!-- Detalhes da tarefa -->
+
+                <h5 class="card-title">{{ task.title }}</h5>
+
                 <div class="card-text">
-                  <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
-                  <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição' }}</small></p>
+                  <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
+                    Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
+                  <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
+                      }}</small></p>
                 </div>
 
-                <!-- Botões de ação -->
                 <div class="d-flex justify-content-between pt-2">
-                  <button 
-                    class="btn btn-sm btn-success"
-                    @click="completeTask(task.id)"
-                  >
+                  <button class="btn btn-sm btn-success" @click="completeTask(task.id)">
                     Concluir
                   </button>
-                  <button 
-                    class="btn btn-sm btn-danger" 
-                    @click="deleteTask(task.id)"
-                  >
+                  <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">
                     Excluir
                   </button>
                 </div>
@@ -362,48 +388,36 @@ if (typeof window !== 'undefined') {
         </div>
       </div>
 
-      <!-- SEÇÃO 2: TAREFAS CONCLUÍDAS (Rolagem horizontal) -->
+      <!-- SEÇÃO 2: TAREFAS CONCLUÍDAS -->
       <div v-if="completedTasks.length > 0" class="mb-5">
         <h3 class="text-center mb-4">
           <FontAwesomeIcon icon="fa-solid fa-check-circle" class="me-2 text-success" />
-          Tarefas Concluídas:
+          Tarefas Concluídas: {{ completedTasks.length }}
         </h3>
         <div class="horizontal-scroll-container">
           <div class="horizontal-scroll-content">
             <div v-for="task in completedTasks" :key="task.id" class="horizontal-card">
               <div class="card h-100 completed-task">
                 <div class="card-body">
-                  <!-- Badge de prioridade -->
                   <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="badge bg-success">
-                      Concluída
-                    </span>
+                    <span class="badge bg-success">Concluída</span>
                     <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
                   </div>
-                  
-                  <!-- Título da tarefa -->
-                  <h6 class="card-title text-decoration-line-through">
-                    {{ task.title }}
-                  </h6>
-                  
-                  <!-- Detalhes da tarefa -->
+
+                  <h6 class="card-title text-decoration-line-through">{{ task.title }}</h6>
+
                   <div class="card-text">
-                    <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
-                    <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição' }}</small></p>
+                    <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
+                      Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
+                    <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
+                        }}</small></p>
                   </div>
 
-                  <!-- Botões de ação -->
                   <div class="d-flex justify-content-between pt-2">
-                    <button 
-                      class="btn btn-sm btn-warning"
-                      @click="reopenTask(task.id)"
-                    >
+                    <button class="btn btn-sm btn-warning" @click="reopenTask(task.id)">
                       Reabrir
                     </button>
-                    <button 
-                      class="btn btn-sm btn-danger" 
-                      @click="deleteTask(task.id)"
-                    >
+                    <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">
                       Excluir
                     </button>
                   </div>
@@ -439,7 +453,7 @@ if (typeof window !== 'undefined') {
 
 .task-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .horizontal-scroll-container {
