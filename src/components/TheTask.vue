@@ -7,13 +7,174 @@ import confetti from 'canvas-confetti';
 const pendingTasks = ref([]);
 const completedTasks = ref([]);
 
+// ✅ VARIÁVEIS PARA DRAG & DROP
+const draggedTask = ref(null);
+const dragOverIndex = ref(null);
+
+// ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS PENDENTES
+function onDragStart(task, event) {
+  draggedTask.value = task;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', task.id);
+  
+  // Adiciona classe visual durante o drag
+  event.target.classList.add('dragging');
+}
+
+function onDragOver(event, index) {
+  event.preventDefault();
+  dragOverIndex.value = index;
+  
+  // Adiciona efeito visual de área de drop
+  const cards = document.querySelectorAll('.task-card');
+  cards.forEach(card => card.classList.remove('drag-over'));
+  
+  if (event.target.closest('.task-card')) {
+    event.target.closest('.task-card').classList.add('drag-over');
+  }
+}
+
+function onDragLeave(event) {
+  // Remove efeito visual quando sai da área
+  if (!event.currentTarget.contains(event.relatedTarget)) {
+    const cards = document.querySelectorAll('.task-card');
+    cards.forEach(card => card.classList.remove('drag-over'));
+  }
+}
+
+function onDrop(event, targetIndex) {
+  event.preventDefault();
+  
+  const cards = document.querySelectorAll('.task-card');
+  cards.forEach(card => card.classList.remove('drag-over'));
+  
+  if (draggedTask.value) {
+    reorderPendingTasks(draggedTask.value, targetIndex);
+  }
+  
+  draggedTask.value = null;
+  dragOverIndex.value = null;
+}
+
+function onDragEnd(event) {
+  // Remove classes visuais
+  event.target.classList.remove('dragging');
+  const cards = document.querySelectorAll('.task-card');
+  cards.forEach(card => card.classList.remove('drag-over'));
+  
+  draggedTask.value = null;
+  dragOverIndex.value = null;
+}
+
+// ✅ REORDENAR TAREFAS PENDENTES
+function reorderPendingTasks(task, newIndex) {
+  const currentIndex = pendingTasks.value.findIndex(t => t.id === task.id);
+  
+  if (currentIndex === -1 || currentIndex === newIndex) return;
+  
+  // Remove a tarefa da posição atual
+  pendingTasks.value.splice(currentIndex, 1);
+  
+  // Insere na nova posição
+  if (newIndex > currentIndex) {
+    // Ajusta o índice quando movendo para baixo
+    pendingTasks.value.splice(newIndex - 1, 0, task);
+  } else {
+    pendingTasks.value.splice(newIndex, 0, task);
+  }
+  
+  // ✅ SALVAR NO LOCALSTORAGE
+  saveReorderedTasks();
+}
+
+// ✅ SALVAR ORDEM NO LOCALSTORAGE
+function saveReorderedTasks() {
+  try {
+    // Mantém as tarefas concluídas e atualiza as pendentes
+    const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    const completedTasksFromStorage = existingTasks.filter(task => task.completed);
+    
+    // Combina tarefas pendentes reordenadas com as concluídas
+    const updatedTasks = [...pendingTasks.value, ...completedTasksFromStorage];
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    
+  } catch (error) {
+    console.error('Erro ao salvar ordem das tarefas:', error);
+  }
+}
+
+// ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS CONCLUÍDAS (Horizontal)
+function onDragStartCompleted(task, event) {
+  draggedTask.value = task;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', task.id);
+  event.target.classList.add('dragging');
+}
+
+function onDragOverCompleted(event, index) {
+  event.preventDefault();
+  dragOverIndex.value = index;
+  
+  const cards = document.querySelectorAll('.completed-task');
+  cards.forEach(card => card.classList.remove('drag-over'));
+  
+  if (event.target.closest('.completed-task')) {
+    event.target.closest('.completed-task').classList.add('drag-over');
+  }
+}
+
+function onDropCompleted(event, targetIndex) {
+  event.preventDefault();
+  
+  const cards = document.querySelectorAll('.completed-task');
+  cards.forEach(card => card.classList.remove('drag-over'));
+  
+  if (draggedTask.value) {
+    reorderCompletedTasks(draggedTask.value, targetIndex);
+  }
+  
+  draggedTask.value = null;
+  dragOverIndex.value = null;
+}
+
+// ✅ REORDENAR TAREFAS CONCLUÍDAS
+function reorderCompletedTasks(task, newIndex) {
+  const currentIndex = completedTasks.value.findIndex(t => t.id === task.id);
+  
+  if (currentIndex === -1 || currentIndex === newIndex) return;
+  
+  completedTasks.value.splice(currentIndex, 1);
+  
+  if (newIndex > currentIndex) {
+    completedTasks.value.splice(newIndex - 1, 0, task);
+  } else {
+    completedTasks.value.splice(newIndex, 0, task);
+  }
+  
+  saveReorderedCompletedTasks();
+}
+
+// ✅ SALVAR ORDEM DAS TAREFAS CONCLUÍDAS
+function saveReorderedCompletedTasks() {
+  try {
+    const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    const pendingTasksFromStorage = existingTasks.filter(task => !task.completed);
+    
+    const updatedTasks = [...pendingTasksFromStorage, ...completedTasks.value];
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    
+  } catch (error) {
+    console.error('Erro ao salvar ordem das tarefas concluídas:', error);
+  }
+}
+
+// ✅ SUAS FUNÇÕES EXISTENTES (mantidas intactas)
 function saveTask() {
   const titleTask = document.getElementById("task").value;
   const priorityTask = document.getElementById("priority").value;
   const dateTimeTask = document.getElementById("date-time").value;
   const descriptionTask = document.getElementById("description").value;
 
-  // ✅ VALIDAÇÃO
   if (!titleTask || !titleTask.trim()) {
     Swal.fire({
       title: "Atenção!",
@@ -34,8 +195,6 @@ function saveTask() {
     return;
   }
 
-
-  // ✅ CRIAR NOVA TAREFA
   const newTask = {
     id: Date.now(),
     title: titleTask.trim(),
@@ -47,16 +206,12 @@ function saveTask() {
   };
 
   try {
-    // ✅ SALVAR NO LOCALSTORAGE
     const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-
     existingTasks.unshift(newTask);
     localStorage.setItem("tasks", JSON.stringify(existingTasks));
 
-    // ✅ CORREÇÃO SIMPLES: Fechar modal usando método nativo
     const modalElement = document.getElementById("modalSave");
     if (modalElement) {
-      // ✅ Método mais simples: usar o data-bs-dismiss
       const bootstrap = window.bootstrap;
       if (bootstrap) {
         const modal = bootstrap.Modal.getInstance(modalElement);
@@ -64,12 +219,10 @@ function saveTask() {
           modal.hide();
         }
       } else {
-        // ✅ Fallback: Simular clique no botão fechar
         const closeButton = modalElement.querySelector('[data-bs-dismiss="modal"]');
         if (closeButton) {
           closeButton.click();
         } else {
-          // ✅ Último fallback: esconder manualmente
           modalElement.classList.remove('show');
           modalElement.style.display = 'none';
           document.body.classList.remove('modal-open');
@@ -79,18 +232,15 @@ function saveTask() {
       }
     }
 
-    // ✅ LIMPAR CAMPOS DO MODAL
     document.getElementById("task").value = "";
     document.getElementById("priority").value = "0";
     document.getElementById("date-time").value = "";
     document.getElementById("description").value = "";
 
-    // ✅ ATUALIZAR A LISTA
     nextTick(() => {
       loadTasks();
     });
 
-    // ✅ MOSTRAR CONFIRMAÇÃO
     Swal.fire({
       title: "✅ Tarefa Salva!",
       text: "Sua tarefa foi adicionada com sucesso.",
@@ -99,7 +249,6 @@ function saveTask() {
       timer: 2000,
       showConfirmButton: false
     });
-
 
   } catch {
     Swal.fire({
@@ -113,13 +262,9 @@ function saveTask() {
 
 function loadTasks() {
   try {
-    // ✅ CARREGAR TAREFAS DO LOCALSTORAGE
     const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-
-    // ✅ CORREÇÃO: Atribuir os valores diretamente para garantir reatividade
     pendingTasks.value = savedTasks.filter(task => !task.completed);
     completedTasks.value = savedTasks.filter(task => task.completed);
-
   } catch {
     pendingTasks.value = [];
     completedTasks.value = [];
@@ -172,7 +317,6 @@ function triggerCelebration() {
 }
 
 function completeTask(taskId) {
-
   const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
   const updatedTasks = existingTasks.map(task =>
     task.id === taskId ? { ...task, completed: true } : task
@@ -180,7 +324,6 @@ function completeTask(taskId) {
 
   localStorage.setItem("tasks", JSON.stringify(updatedTasks));
 
-  // ✅ USAR nextTick PARA GARANTIR ATUALIZAÇÃO
   nextTick(() => {
     loadTasks();
     triggerCelebration();
@@ -210,7 +353,6 @@ function triggerReopenMessage() {
 }
 
 function reopenTask(taskId) {
-
   const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
   const updatedTasks = existingTasks.map(task =>
     task.id === taskId ? { ...task, completed: false } : task
@@ -218,7 +360,6 @@ function reopenTask(taskId) {
 
   localStorage.setItem("tasks", JSON.stringify(updatedTasks));
 
-  // ✅ USAR nextTick PARA GARANTIR ATUALIZAÇÃO
   nextTick(() => {
     loadTasks();
     triggerReopenMessage();
@@ -226,7 +367,6 @@ function reopenTask(taskId) {
 }
 
 function deleteTask(taskId) {
-
   Swal.fire({
     title: "Quer excluir essa tarefa?",
     showDenyButton: true,
@@ -240,7 +380,6 @@ function deleteTask(taskId) {
 
       localStorage.setItem("tasks", JSON.stringify(updatedTasks));
 
-      // ✅ USAR nextTick PARA GARANTIR ATUALIZAÇÃO
       nextTick(() => {
         loadTasks();
         Swal.fire("Tarefa Excluída!", "", "success");
@@ -251,12 +390,10 @@ function deleteTask(taskId) {
   });
 }
 
-// ✅ CARREGAR TAREFAS QUANDO O COMPONENTE FOR MONTADO
 onMounted(() => {
   loadTasks();
 });
 
-// ✅ OPCIONAL: Adicionar listener para atualizações em outras abas
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => {
     if (e.key === 'tasks') {
@@ -268,7 +405,6 @@ if (typeof window !== 'undefined') {
 
 <template>
   <div class="d-flex flex-column align-items-center mt-0 w-100">
-    <!-- Botão que irá abrir o modal -->
     <button type="button" class="btn btn-success btn-lg mt-0 mb-4" data-bs-toggle="modal" data-bs-target="#modalSave">
       Adicionar atividade
     </button>
@@ -283,7 +419,6 @@ if (typeof window !== 'undefined') {
           </div>
 
           <div class="modal-body">
-            <!-- Input -->
             <div class="mb-3">
               <label class="form-label" for="task">Atividade:</label>
               <div class="input-group">
@@ -295,7 +430,6 @@ if (typeof window !== 'undefined') {
               </div>
             </div>
 
-            <!-- Select -->
             <div class="mb-3">
               <label for="priority" class="form-label">Nível de prioridade:</label>
               <div class="input-group">
@@ -311,7 +445,6 @@ if (typeof window !== 'undefined') {
               </div>
             </div>
 
-            <!-- Data e Hora -->
             <div class="mb-3">
               <label for="date-time" class="form-label">Data e Hora a realizar:</label>
               <div class="input-group">
@@ -322,7 +455,6 @@ if (typeof window !== 'undefined') {
               </div>
             </div>
 
-            <!-- Descricao -->
             <div class="mb-3">
               <label for="description" class="form-label">Descrição:</label>
               <div class="input-group">
@@ -343,20 +475,33 @@ if (typeof window !== 'undefined') {
       </div>
     </div>
 
-    <!-- ✅ BARRA DE PROGRESSO DINÂMICA -->
     <TheProgress :completed-tasks="completedTasks" :pending-tasks="pendingTasks" />
 
-    <!-- Área para mostrar as tarefas -->
     <div class="container mt-4 w-100">
-      <!-- SEÇÃO 1: TAREFAS PENDENTES -->
+      <!-- SEÇÃO 1: TAREFAS PENDENTES COM DRAG & DROP -->
       <div v-if="pendingTasks.length > 0" class="mb-5">
         <h3 class="text-center mb-4">
           <FontAwesomeIcon icon="fa-solid fa-clock" class="me-2 text-warning" />
           Tarefas Pendentes: {{ pendingTasks.length }}
+          <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
+            📍Segure e Arraste para mudar a ordem das tarefas...
+          </small>
         </h3>
         <div class="row justify-content-start g-3">
-          <div v-for="task in pendingTasks" :key="task.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
-            <div class="card h-100 task-card">
+          <div 
+            v-for="(task, index) in pendingTasks" 
+            :key="task.id" 
+            class="col-12 col-md-6 col-lg-4 col-xl-3"
+          >
+            <div 
+              class="card h-100 task-card"
+              draggable="true"
+              @dragstart="onDragStart(task, $event)"
+              @dragover="onDragOver($event, index)"
+              @dragleave="onDragLeave"
+              @drop="onDrop($event, index)"
+              @dragend="onDragEnd"
+            >
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                   <span class="badge" :class="getPriorityBadgeClass(task.priority)">
@@ -388,16 +533,31 @@ if (typeof window !== 'undefined') {
         </div>
       </div>
 
-      <!-- SEÇÃO 2: TAREFAS CONCLUÍDAS -->
+      <!-- SEÇÃO 2: TAREFAS CONCLUÍDAS COM DRAG & DROP -->
       <div v-if="completedTasks.length > 0" class="mb-5">
         <h3 class="text-center mb-4">
           <FontAwesomeIcon icon="fa-solid fa-check-circle" class="me-2 text-success" />
           Tarefas Concluídas: {{ completedTasks.length }}
+          <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
+            📍Segure e Arraste para mudar a ordem das tarefas...
+          </small>
         </h3>
         <div class="horizontal-scroll-container">
           <div class="horizontal-scroll-content">
-            <div v-for="task in completedTasks" :key="task.id" class="horizontal-card">
-              <div class="card h-100 completed-task">
+            <div 
+              v-for="(task, index) in completedTasks" 
+              :key="task.id" 
+              class="horizontal-card"
+            >
+              <div 
+                class="card h-100 completed-task"
+                draggable="true"
+                @dragstart="onDragStartCompleted(task, $event)"
+                @dragover="onDragOverCompleted($event, index)"
+                @dragleave="onDragLeave"
+                @drop="onDropCompleted($event, index)"
+                @dragend="onDragEnd"
+              >
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-start mb-2">
                     <span class="badge bg-success">Concluída</span>
@@ -428,7 +588,6 @@ if (typeof window !== 'undefined') {
         </div>
       </div>
 
-      <!-- Mensagem quando não há tarefas -->
       <div v-if="pendingTasks.length === 0 && completedTasks.length === 0" class="text-center">
         <div class="card mx-auto" style="max-width: 400px;">
           <div class="card-body text-center">
@@ -446,14 +605,59 @@ if (typeof window !== 'undefined') {
 </template>
 
 <style scoped>
-/* Seus estilos permanecem os mesmos */
 .task-card {
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  cursor: grab;
+  user-select: none;
 }
 
 .task-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.task-card:active {
+  cursor: grabbing;
+}
+
+/* Efeitos visuais para drag & drop */
+.task-card.dragging {
+  opacity: 0.6;
+  transform: rotate(3deg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.task-card.drag-over {
+  border: 2px dashed #198754;
+  background-color: rgba(25, 135, 84, 0.05);
+  transform: scale(1.02);
+}
+
+.completed-task {
+  cursor: grab;
+  user-select: none;
+  transition: all 0.3s ease;
+}
+
+.completed-task:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.completed-task:active {
+  cursor: grabbing;
+}
+
+.completed-task.dragging {
+  opacity: 0.6;
+  transform: rotate(3deg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.completed-task.drag-over {
+  border: 2px dashed #198754;
+  background-color: rgba(25, 135, 84, 0.05);
+  transform: scale(1.02);
 }
 
 .horizontal-scroll-container {
