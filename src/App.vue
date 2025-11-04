@@ -1,44 +1,63 @@
 <script setup>
 import TheHeader from './components/TheHeader.vue'
 import TheTask from './components/TheTask.vue';
-
 </script>
 
 <template>
-   <div class="container-fluid min-vh-100 d-flex flex-column">
-    <header class="header py-4">
+  <div id="app" class="container-fluid min-vh-100 d-flex flex-column p-0">
+    <header class="header py-3 bg-light">
       <div class="container">
-         <div class="row align-items-center justify-content-center text-center">
-            <div class="col-auto color-#207178" style="color: #207178">
-              <TheHeader msg="CommitDone" />
-            </div>
-            <div class="col-auto">
-              <img class="logo mt-5" alt="CommitDone logo" id="logo" src="./assets/logo.png" width="50" height="50" />
-            </div>
+        <div class="row align-items-center justify-content-center text-center">
+          <div class="col-auto">
+            <TheHeader msg="CommitDone" />
           </div>
+          <div class="col-auto">
+            <img class="logo" alt="CommitDone logo" src="./assets/logo.png" width="50" height="50" />
+          </div>
+        </div>
       </div>
     </header>
-    <main class="grow d-flex align-items-center justify-content-center py-0">
-      <TheTask />
+
+    <main class="flex-grow-1 d-flex align-items-start justify-content-center py-3">
+      <div class="container-fluid px-3 px-md-4">
+        <TheTask />
+      </div>
     </main>
   </div>
 </template>
 
+<style scoped>
+.container-fluid {
+  background-color: #bfe3c0;
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+  display: block;
+}
+</style>
+
 <style>
-html,body{
+html, body {
   background-color: #bfe3c0;
   color: black;
   margin: 0;
   padding: 0;
   height: 100%;
+  width: 100%;
 }
 
-.logo {
-  max-width: 100%;
-  height: auto;
-}
-
+/* Garante que o app ocupe toda a largura */
 #app {
-  height: 100%;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100% !important;
 }
 </style>

@@ -37,37 +37,46 @@ function saveTask() {
     createdAt: new Date().toISOString()
   };
 
-  // ✅ CARREGAR TAREFAS EXISTENTES DO LOCALSTORAGE
-  const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-  
-  // ✅ ADICIONAR NOVA TAREFA NO INÍCIO DO ARRAY
-  existingTasks.unshift(newTask);
-  
-  // ✅ SALVAR ARRAY ATUALIZADO NO LOCALSTORAGE
-  localStorage.setItem("tasks", JSON.stringify(existingTasks));
+   try {
+    // ✅ SALVAR NO LOCALSTORAGE
+    const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    existingTasks.unshift(newTask);
+    localStorage.setItem("tasks", JSON.stringify(existingTasks));
 
-  Swal.fire({
-    title: "Cadastro Efetuado!",
-    text: "Sua tarefa foi salva com sucesso.",
-    icon: "success",
-    width: 300,  
-    padding: '2em'
-  });
+    // ✅ FECHAR MODAL IMEDIATAMENTE
+    const modal = bootstrap.Modal.getInstance(document.getElementById("modalSave"));
+    if (modal) {
+      modal.hide();
+    }
 
-  // ✅ LIMPAR CAMPOS DO MODAL
-  document.getElementById("task").value = "";
-  document.getElementById("priority").value = "0";
-  document.getElementById("date-time").value = "";
-  document.getElementById("description").value = "";
+    // ✅ LIMPAR CAMPOS DO MODAL
+    document.getElementById("task").value = "";
+    document.getElementById("priority").value = "0";
+    document.getElementById("date-time").value = "";
+    document.getElementById("description").value = "";
 
-  // ✅ FECHAR MODAL
-  const modal = bootstrap.Modal.getInstance(document.getElementById("modalSave"));
-  if (modal) {
-    modal.hide();
+   // ✅ ATUALIZAR A LISTA
+    loadTasks();
+
+    // ✅ MOSTRAR CONFIRMAÇÃO APÓS ATUALIZAR
+    Swal.fire({
+      title: "✅ Tarefa Salva!",
+      text: "Sua tarefa foi adicionada com sucesso.",
+      icon: "success",
+      width: 320,
+      timer: 2000, 
+      showConfirmButton: false
+    });
+  } catch (error) {
+    console.error('Erro ao salvar tarefa:', error);
+    Swal.fire({
+      title: "Erro!",
+      text: "Não foi possível salvar a tarefa.",
+      icon: "error",
+      width: 400
+    });
   }
 
-  // ✅ ATUALIZAR LISTA DE TAREFAS - GARANTINDO REATIVIDADE
-  loadTasks();
 }
 
 function loadTasks() {
