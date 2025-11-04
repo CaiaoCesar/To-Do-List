@@ -11,13 +11,11 @@ const completedTasks = ref([]);
 const draggedTask = ref(null);
 const dragOverIndex = ref(null);
 
-// ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS PENDENTES
+// ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS PENDENTES (VERTICAL)
 function onDragStart(task, event) {
   draggedTask.value = task;
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', task.id);
-  
-  // Adiciona classe visual durante o drag
   event.target.classList.add('dragging');
 }
 
@@ -25,7 +23,6 @@ function onDragOver(event, index) {
   event.preventDefault();
   dragOverIndex.value = index;
   
-  // Adiciona efeito visual de área de drop
   const cards = document.querySelectorAll('.task-card');
   cards.forEach(card => card.classList.remove('drag-over'));
   
@@ -35,7 +32,6 @@ function onDragOver(event, index) {
 }
 
 function onDragLeave(event) {
-  // Remove efeito visual quando sai da área
   if (!event.currentTarget.contains(event.relatedTarget)) {
     const cards = document.querySelectorAll('.task-card');
     cards.forEach(card => card.classList.remove('drag-over'));
@@ -56,70 +52,37 @@ function onDrop(event, targetIndex) {
   dragOverIndex.value = null;
 }
 
-function onDragEnd(event) {
-  // Remove classes visuais
-  event.target.classList.remove('dragging');
-  const cards = document.querySelectorAll('.task-card');
-  cards.forEach(card => card.classList.remove('drag-over'));
-  
-  draggedTask.value = null;
-  dragOverIndex.value = null;
-}
-
-// ✅ REORDENAR TAREFAS PENDENTES
-function reorderPendingTasks(task, newIndex) {
-  const currentIndex = pendingTasks.value.findIndex(t => t.id === task.id);
-  
-  if (currentIndex === -1 || currentIndex === newIndex) return;
-  
-  // Remove a tarefa da posição atual
-  pendingTasks.value.splice(currentIndex, 1);
-  
-  // Insere na nova posição
-  if (newIndex > currentIndex) {
-    // Ajusta o índice quando movendo para baixo
-    pendingTasks.value.splice(newIndex - 1, 0, task);
-  } else {
-    pendingTasks.value.splice(newIndex, 0, task);
-  }
-  
-  // ✅ SALVAR NO LOCALSTORAGE
-  saveReorderedTasks();
-}
-
-// ✅ SALVAR ORDEM NO LOCALSTORAGE
-function saveReorderedTasks() {
-  try {
-    // Mantém as tarefas concluídas e atualiza as pendentes
-    const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-    const completedTasksFromStorage = existingTasks.filter(task => task.completed);
-    
-    // Combina tarefas pendentes reordenadas com as concluídas
-    const updatedTasks = [...pendingTasks.value, ...completedTasksFromStorage];
-    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-    
-  } catch (error) {
-    console.error('Erro ao salvar ordem das tarefas:', error);
-  }
-}
-
-// ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS CONCLUÍDAS (Horizontal)
+// ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS CONCLUÍDAS (HORIZONTAL - CORRIGIDO)
 function onDragStartCompleted(task, event) {
   draggedTask.value = task;
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', task.id);
-  event.target.classList.add('dragging');
+  
+  // ✅ CORREÇÃO: Adiciona classe ao elemento correto
+  const card = event.target.closest('.completed-task') || event.target;
+  card.classList.add('dragging');
 }
 
 function onDragOverCompleted(event, index) {
   event.preventDefault();
   dragOverIndex.value = index;
   
+  // ✅ CORREÇÃO: Remove classes de todos os cards concluídos
   const cards = document.querySelectorAll('.completed-task');
   cards.forEach(card => card.classList.remove('drag-over'));
   
-  if (event.target.closest('.completed-task')) {
-    event.target.closest('.completed-task').classList.add('drag-over');
+  // ✅ CORREÇÃO: Adiciona classe ao card sob o cursor
+  const targetCard = event.target.closest('.completed-task');
+  if (targetCard) {
+    targetCard.classList.add('drag-over');
+  }
+}
+
+function onDragLeaveCompleted(event) {
+  // ✅ CORREÇÃO: Só remove a classe se saiu completamente do card
+  if (!event.currentTarget.contains(event.relatedTarget)) {
+    const cards = document.querySelectorAll('.completed-task');
+    cards.forEach(card => card.classList.remove('drag-over'));
   }
 }
 
@@ -137,16 +100,60 @@ function onDropCompleted(event, targetIndex) {
   dragOverIndex.value = null;
 }
 
-// ✅ REORDENAR TAREFAS CONCLUÍDAS
+function onDragEnd(event) {
+  // ✅ CORREÇÃO: Remove classes de ambos os tipos de cards
+  const allCards = document.querySelectorAll('.task-card, .completed-task');
+  allCards.forEach(card => {
+    card.classList.remove('dragging', 'drag-over');
+  });
+  
+  draggedTask.value = null;
+  dragOverIndex.value = null;
+}
+
+// ✅ REORDENAR TAREFAS PENDENTES (mantido igual)
+function reorderPendingTasks(task, newIndex) {
+  const currentIndex = pendingTasks.value.findIndex(t => t.id === task.id);
+  
+  if (currentIndex === -1 || currentIndex === newIndex) return;
+  
+  pendingTasks.value.splice(currentIndex, 1);
+  
+  if (newIndex > currentIndex) {
+    pendingTasks.value.splice(newIndex - 1, 0, task);
+  } else {
+    pendingTasks.value.splice(newIndex, 0, task);
+  }
+  
+  saveReorderedTasks();
+}
+
+// ✅ SALVAR ORDEM NO LOCALSTORAGE (mantido igual)
+function saveReorderedTasks() {
+  try {
+    const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    const completedTasksFromStorage = existingTasks.filter(task => task.completed);
+    const updatedTasks = [...pendingTasks.value, ...completedTasksFromStorage];
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+  } catch (error) {
+    console.error('Erro ao salvar ordem das tarefas:', error);
+  }
+}
+
+// ✅ REORDENAR TAREFAS CONCLUÍDAS (CORRIGIDO)
 function reorderCompletedTasks(task, newIndex) {
   const currentIndex = completedTasks.value.findIndex(t => t.id === task.id);
   
   if (currentIndex === -1 || currentIndex === newIndex) return;
   
+  // ✅ CORREÇÃO: Remove e insere corretamente
   completedTasks.value.splice(currentIndex, 1);
   
-  if (newIndex > currentIndex) {
-    completedTasks.value.splice(newIndex - 1, 0, task);
+  // ✅ CORREÇÃO: Lógica de inserção corrigida para array horizontal
+  if (newIndex >= completedTasks.value.length) {
+    completedTasks.value.push(task);
+  } else if (newIndex < 0) {
+    completedTasks.value.unshift(task);
   } else {
     completedTasks.value.splice(newIndex, 0, task);
   }
@@ -154,21 +161,19 @@ function reorderCompletedTasks(task, newIndex) {
   saveReorderedCompletedTasks();
 }
 
-// ✅ SALVAR ORDEM DAS TAREFAS CONCLUÍDAS
+// ✅ SALVAR ORDEM DAS TAREFAS CONCLUÍDAS (mantido igual)
 function saveReorderedCompletedTasks() {
   try {
     const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
     const pendingTasksFromStorage = existingTasks.filter(task => !task.completed);
-    
     const updatedTasks = [...pendingTasksFromStorage, ...completedTasks.value];
     localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-    
   } catch (error) {
     console.error('Erro ao salvar ordem das tarefas concluídas:', error);
   }
 }
 
-// ✅ SUAS FUNÇÕES EXISTENTES (mantidas intactas)
+// ✅ SEU CÓDIGO EXISTENTE (mantido intacto)
 function saveTask() {
   const titleTask = document.getElementById("task").value;
   const priorityTask = document.getElementById("priority").value;
@@ -484,7 +489,7 @@ if (typeof window !== 'undefined') {
           <FontAwesomeIcon icon="fa-solid fa-clock" class="me-2 text-warning" />
           Tarefas Pendentes: {{ pendingTasks.length }}
           <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-            📍Segure e Arraste para mudar a ordem das tarefas...
+            📍 Arraste para reordenar
           </small>
         </h3>
         <div class="row justify-content-start g-3">
@@ -533,13 +538,13 @@ if (typeof window !== 'undefined') {
         </div>
       </div>
 
-      <!-- SEÇÃO 2: TAREFAS CONCLUÍDAS COM DRAG & DROP -->
+      <!-- SEÇÃO 2: TAREFAS CONCLUÍDAS COM DRAG & DROP CORRIGIDO -->
       <div v-if="completedTasks.length > 0" class="mb-5">
         <h3 class="text-center mb-4">
           <FontAwesomeIcon icon="fa-solid fa-check-circle" class="me-2 text-success" />
           Tarefas Concluídas: {{ completedTasks.length }}
           <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-            📍Segure e Arraste para mudar a ordem das tarefas...
+            📍 Arraste horizontalmente para reordenar
           </small>
         </h3>
         <div class="horizontal-scroll-container">
@@ -554,7 +559,7 @@ if (typeof window !== 'undefined') {
                 draggable="true"
                 @dragstart="onDragStartCompleted(task, $event)"
                 @dragover="onDragOverCompleted($event, index)"
-                @dragleave="onDragLeave"
+                @dragleave="onDragLeaveCompleted"
                 @drop="onDropCompleted($event, index)"
                 @dragend="onDragEnd"
               >
@@ -620,7 +625,6 @@ if (typeof window !== 'undefined') {
   cursor: grabbing;
 }
 
-/* Efeitos visuais para drag & drop */
 .task-card.dragging {
   opacity: 0.6;
   transform: rotate(3deg);
