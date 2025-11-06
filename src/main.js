@@ -21,9 +21,11 @@ import { faGithub }  from '@fortawesome/free-brands-svg-icons'
 import { faLaptop } from '@fortawesome/free-solid-svg-icons'
 import { faRocket } from '@fortawesome/free-solid-svg-icons'
 import { faArrowsUpDownLeftRight } from '@fortawesome/free-solid-svg-icons'
+import { faHourglassHalf } from '@fortawesome/free-solid-svg-icons'
+import { faPenToSquare } from '@fortawesome/free-solid-svg-icons'
 
 // Adicione os ícones que vai usar na library
-library.add(faThumbtack, faFlag, faCalendar, faAlignLeft, faClock, faCheckCircle, faGithub, faLaptop, faRocket, faArrowsUpDownLeftRight)
+library.add(faThumbtack, faFlag, faCalendar, faAlignLeft, faClock, faCheckCircle, faGithub, faLaptop, faRocket, faArrowsUpDownLeftRight, faHourglassHalf, faPenToSquare)
 
 // Crie a app PRIMEIRO
 const app = createApp(App)

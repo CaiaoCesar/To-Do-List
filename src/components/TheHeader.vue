@@ -11,7 +11,11 @@ defineProps({
   <div class="header-content">
     <h1 class="text-center mb-3"><strong>{{ msg }}</strong></h1>
     <p class="lead text-center">
-      Bem-vindo ao CommitDone! Sua branch de tarefas está esperando por um push de produtividade <FontAwesomeIcon icon="laptop" /> <FontAwesomeIcon icon="rocket" />!
+      Bem-vindo ao CommitDone!<br> Sua branch de tarefas está esperando por um push de produtividade!
+      <FontAwesomeIcon icon="laptop" style="color: #207178;" />
+      <FontAwesomeIcon icon="pen-to-square" style="color: #207178;"/>
+      <FontAwesomeIcon icon="hourglass-half" style="color: #207178;"/>
+      <FontAwesomeIcon icon="rocket" style="color: #207178;"/>
     </p>
   </div>
 </template>

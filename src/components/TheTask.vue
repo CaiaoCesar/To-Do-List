@@ -9,191 +9,72 @@ const completedTasks = ref([]);
 
 // ✅ VARIÁVEIS PARA DRAG & DROP
 const draggedTask = ref(null);
-const dragOverIndex = ref(null);
+const dragSource = ref(null);
 
-// ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS PENDENTES (VERTICAL - CORRIGIDO)
-function onDragStart(task, event) {
+// ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS 
+function onDragStart(task, event, source) {
   draggedTask.value = task;
+  dragSource.value = source;
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', task.id);
 
-  // ✅ CORREÇÃO: Adiciona classe ao elemento correto
-  const card = event.target.closest('.task-card') || event.target;
+  // ✅ Adiciona classe ao elemento correto
+  const card = event.target.closest('.task-card, .completed-task') || event.target;
   card.classList.add('dragging');
 }
 
-function onDragOver(event, index) {
+function onDragOverColumn(event) {
   event.preventDefault();
-  dragOverIndex.value = index;
-
-  const cards = document.querySelectorAll('.task-card');
-  cards.forEach(card => card.classList.remove('drag-over'));
-
-  // ✅ CORREÇÃO: Adiciona classe ao card sob o cursor
-  const targetCard = event.target.closest('.task-card');
-  if (targetCard) {
-    targetCard.classList.add('drag-over');
-  }
+  event.dataTransfer.dropEffect = 'move';
+  
+  // Adiciona efeito visual na coluna de destino
+  const dropZone = event.currentTarget;
+  dropZone.classList.add('drag-over-column');
 }
 
-function onDragLeave(event) {
-  // ✅ CORREÇÃO: Só remove a classe se saiu completamente do card
-  if (!event.currentTarget.contains(event.relatedTarget)) {
-    const cards = document.querySelectorAll('.task-card');
-    cards.forEach(card => card.classList.remove('drag-over'));
-  }
-}
-
-function onDrop(event, targetIndex) {
+// ✅ DROP ENTRE COLUNAS (CONCLUIR/REABRIR)
+function onDropColumn(event, targetColumn) {
   event.preventDefault();
+  
+  // Remove efeitos visuais
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.classList.remove('drag-over-column');
+  });
 
-  const cards = document.querySelectorAll('.task-card');
-  cards.forEach(card => card.classList.remove('drag-over'));
+  if (!draggedTask.value || !dragSource.value) return;
 
-  if (draggedTask.value) {
-    reorderPendingTasks(draggedTask.value, targetIndex);
+  // Se a tarefa está sendo movida para uma coluna diferente
+  if (dragSource.value !== targetColumn) {
+    if (targetColumn === 'completed') {
+      // Movendo para concluídas → Concluir tarefa
+      completeTask(draggedTask.value.id);
+    } else {
+      // Movendo para pendentes → Reabrir tarefa
+      reopenTask(draggedTask.value.id);
+    }
   }
 
   draggedTask.value = null;
-  dragOverIndex.value = null;
+  dragSource.value = null;
 }
 
 // ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS CONCLUÍDAS (HORIZONTAL)
-function onDragStartCompleted(task, event) {
-  draggedTask.value = task;
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setData('text/plain', task.id);
-
-  const card = event.target.closest('.completed-task') || event.target;
-  card.classList.add('dragging');
-}
-
-function onDragOverCompleted(event, index) {
-  event.preventDefault();
-  dragOverIndex.value = index;
-
-  const cards = document.querySelectorAll('.completed-task');
-  cards.forEach(card => card.classList.remove('drag-over'));
-
-  const targetCard = event.target.closest('.completed-task');
-  if (targetCard) {
-    targetCard.classList.add('drag-over');
-  }
-}
-
-function onDragLeaveCompleted(event) {
-  if (!event.currentTarget.contains(event.relatedTarget)) {
-    const cards = document.querySelectorAll('.completed-task');
-    cards.forEach(card => card.classList.remove('drag-over'));
-  }
-}
-
-function onDropCompleted(event, targetIndex) {
-  event.preventDefault();
-
-  const cards = document.querySelectorAll('.completed-task');
-  cards.forEach(card => card.classList.remove('drag-over'));
-
-  if (draggedTask.value) {
-    reorderCompletedTasks(draggedTask.value, targetIndex);
-  }
-
-  draggedTask.value = null;
-  dragOverIndex.value = null;
-}
-
-function onDragEnd(event) {
+function onDragEnd() {
   const allCards = document.querySelectorAll('.task-card, .completed-task');
+  const allDropZones = document.querySelectorAll('.drop-zone');
+  
   allCards.forEach(card => {
     card.classList.remove('dragging', 'drag-over');
   });
+  
+  allDropZones.forEach(zone => {
+    zone.classList.remove('drag-over-column');
+  });
 
   draggedTask.value = null;
-  dragOverIndex.value = null;
+  dragSource.value = null;
 }
 
-// ✅ REORDENAR TAREFAS PENDENTES (CORRIGIDO)
-function reorderPendingTasks(task, newIndex) {
-  const currentIndex = pendingTasks.value.findIndex(t => t.id === task.id);
-
-  if (currentIndex === -1 || currentIndex === newIndex) return;
-
-  // ✅ CORREÇÃO: Lógica simplificada e corrigida
-  // Remove a tarefa da posição atual
-  const [movedTask] = pendingTasks.value.splice(currentIndex, 1);
-
-  // ✅ CORREÇÃO: Insere na nova posição corretamente
-  if (newIndex >= pendingTasks.value.length) {
-    pendingTasks.value.push(movedTask);
-  } else if (newIndex < 0) {
-    pendingTasks.value.unshift(movedTask);
-  } else {
-    // ✅ CORREÇÃO: Ajuste do índice quando movendo para baixo
-    const adjustedIndex = newIndex > currentIndex ? newIndex : newIndex;
-    pendingTasks.value.splice(adjustedIndex, 0, movedTask);
-  }
-
-  saveReorderedTasks();
-}
-
-// ✅ SALVAR ORDEM NO LOCALSTORAGE
-function saveReorderedTasks() {
-  try {
-    const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-    const completedTasksFromStorage = existingTasks.filter(task => task.completed);
-    const updatedTasks = [...pendingTasks.value, ...completedTasksFromStorage];
-    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-  } catch (error) {
-    console.error('Erro ao salvar ordem das tarefas:', error);
-  }
-}
-
-// ✅ REORDENAR TAREFAS CONCLUÍDAS
-function reorderCompletedTasks(task, newIndex) {
-  const currentIndex = completedTasks.value.findIndex(t => t.id === task.id);
-
-  if (currentIndex === -1 || currentIndex === newIndex) return;
-
-  const [movedTask] = completedTasks.value.splice(currentIndex, 1);
-
-  if (newIndex >= completedTasks.value.length) {
-    completedTasks.value.push(movedTask);
-  } else if (newIndex < 0) {
-    completedTasks.value.unshift(movedTask);
-  } else {
-    completedTasks.value.splice(newIndex, 0, movedTask);
-  }
-
-  saveReorderedCompletedTasks();
-}
-
-// ✅ SALVAR ORDEM DAS TAREFAS CONCLUÍDAS
-function saveReorderedCompletedTasks() {
-  try {
-    const existingTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-    const pendingTasksFromStorage = existingTasks.filter(task => !task.completed);
-    const updatedTasks = [...pendingTasksFromStorage, ...completedTasks.value];
-    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-  } catch (error) {
-    console.error('Erro ao salvar ordem das tarefas concluídas:', error);
-  }
-}
-
-// ✅ MÉTODO ALTERNATIVO MAIS ROBUSTO PARA REORDENAÇÃO
-function reorderTasksSmart(task, newIndex, tasksArray) {
-  const currentIndex = tasksArray.findIndex(t => t.id === task.id);
-
-  if (currentIndex === -1 || currentIndex === newIndex) return tasksArray;
-
-  // Cria uma nova array para não mutar a original diretamente
-  const newArray = [...tasksArray];
-  const [movedTask] = newArray.splice(currentIndex, 1);
-  newArray.splice(newIndex, 0, movedTask);
-
-  return newArray;
-}
-
-// ✅ SEU CÓDIGO EXISTENTE (mantido intacto)
 function saveTask() {
   const titleTask = document.getElementById("task").value;
   const priorityTask = document.getElementById("priority").value;
@@ -502,99 +383,135 @@ if (typeof window !== 'undefined') {
 
     <TheProgress :completed-tasks="completedTasks" :pending-tasks="pendingTasks" />
 
-    <div class="container mt-4 w-100">
-      <!-- SEÇÃO 1: TAREFAS PENDENTES COM DRAG & DROP CORRIGIDO -->
-      <div v-if="pendingTasks.length > 0" class="mb-5">
-        <h3 class="text-center mb-4">
-          <FontAwesomeIcon icon="fa-solid fa-clock" class="me-2 text-warning" />
-          Tarefas Pendentes: {{ pendingTasks.length }}
-          <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-            <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" /> Arraste horizontalmente para
-            reordenar
-          </small>
-        </h3>
-        <div class="row justify-content-start g-3">
-          <div v-for="(task, index) in pendingTasks" :key="task.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
-            <div class="card h-100 task-card" draggable="true" @dragstart="onDragStart(task, $event)"
-              @dragover="onDragOver($event, index)" @dragleave="onDragLeave" @drop="onDrop($event, index)"
-              @dragend="onDragEnd">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                  <span class="badge" :class="getPriorityBadgeClass(task.priority)">
-                    {{ getPriorityText(task.priority) }}
-                  </span>
-                  <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
-                </div>
+    <div class="container mt-4 w-100 .bg-warning">
+      <div class="row">
+        <!-- COLUNA PENDENTES -->
+        <div class="col-12 col-lg-6">
+          <div v-if="pendingTasks.length > 0" class="mb-5">
+            <h3 class="text-center mb-4">
+              <FontAwesomeIcon icon="clock" class="me-2 text-warning" />
+              Tarefas Pendentes: {{ pendingTasks.length }}
+              <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
+                <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" /> 
+                Mova a tarefa para mudar de estado e marcar como concluída.
+              </small>
+            </h3>
+            
+            <!-- Área de Drop para Pendentes -->
+            <div class="drop-zone pending-drop-zone" 
+                 @dragover="onDragOverColumn($event)"
+                 @drop="onDropColumn($event, 'pending')">
+              
+              <div class="row justify-content-start g-3">
+                <div v-for="task in pendingTasks" :key="task.id" 
+                     class="col-12 col-md-6 col-xl-6">
+                  <div class="card h-100 task-card" draggable="true" 
+                       @dragstart="onDragStart(task, $event, 'pending')"
+                       @dragend="onDragEnd">
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge" :class="getPriorityBadgeClass(task.priority)">
+                          {{ getPriorityText(task.priority) }}
+                        </span>
+                        <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
+                      </div>
 
-                <h5 class="card-title">{{ task.title }}</h5>
+                      <h5 class="card-title">{{ task.title }}</h5>
 
-                <div class="card-text">
-                  <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
-                    Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
-                  <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
-                  }}</small></p>
-                </div>
+                      <div class="card-text">
+                        <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
+                          Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
+                        <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
+                        }}</small></p>
+                      </div>
 
-                <div class="d-flex justify-content-between pt-2">
-                  <button class="btn btn-sm btn-success" @click="completeTask(task.id)">
-                    Concluir
-                  </button>
-                  <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">
-                    Excluir
-                  </button>
+                      <div class="d-flex justify-content-between pt-2">
+                        <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- Estado vazio para pendentes -->
+          <div v-else class="text-center empty-column">
+            <div class="card mx-auto">
+              <div class="card-body text-center">
+                <h5>Nenhuma tarefa pendente</h5>
+                <p class="text-muted">Arraste tarefas concluídas para cá para reabri-las</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
       <!-- SEÇÃO 2: TAREFAS CONCLUÍDAS COM DRAG & DROP -->
-      <div v-if="completedTasks.length > 0" class="mb-5">
-        <h3 class="text-center mb-4">
-          <FontAwesomeIcon icon="fa-solid fa-check-circle" class="me-2 text-success" />
-          Tarefas Concluídas: {{ completedTasks.length }}
-          <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-            <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" /> Arraste horizontalmente para
-            reordenar
-          </small>
-        </h3>
-        <div class="horizontal-scroll-container">
-          <div class="horizontal-scroll-content">
-            <div v-for="(task, index) in completedTasks" :key="task.id" class="horizontal-card">
-              <div class="card h-100 completed-task" draggable="true" @dragstart="onDragStartCompleted(task, $event)"
-                @dragover="onDragOverCompleted($event, index)" @dragleave="onDragLeaveCompleted"
-                @drop="onDropCompleted($event, index)" @dragend="onDragEnd">
-                <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="badge bg-success">Concluída</span>
-                    <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
-                  </div>
+      <div class="col-12 col-lg-6 .bg-success">
+          <div v-if="completedTasks.length > 0" class="mb-5">
+            <h3 class="text-center mb-4">
+              <FontAwesomeIcon icon="check-circle" class="me-2 text-success" />
+              Tarefas Concluídas: {{ completedTasks.length }}
+              <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
+                <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" /> 
+                Mova a tarefa para reabrir e assim retornar o estado para pendente.
+              </small>
+            </h3>
 
-                  <h6 class="card-title text-decoration-line-through">{{ task.title }}</h6>
+         <!-- Área de Drop para Concluídas -->
+            <div class="drop-zone completed-drop-zone"
+                 @dragover="onDragOverColumn($event)"
+                 @drop="onDropColumn($event, 'completed')">
+              
+              <div class="horizontal-scroll-container">
+                <div class="horizontal-scroll-content">
+                  <div v-for="task in completedTasks" :key="task.id" class="horizontal-card">
+                    <div class="card h-100 completed-task" draggable="true"
+                         @dragstart="onDragStart(task, $event, 'completed')"
+                         @dragend="onDragEnd">
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                          <span class="badge bg-success">Concluída</span>
+                          <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
+                        </div>
 
-                  <div class="card-text">
-                    <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
-                      Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
-                    <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
-                    }}</small></p>
-                  </div>
+                        <h6 class="card-title text-decoration-line-through">{{ task.title }}</h6>
 
-                  <div class="d-flex justify-content-between pt-2">
-                    <button class="btn btn-sm btn-warning" @click="reopenTask(task.id)">
-                      Reabrir
-                    </button>
-                    <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">
-                      Excluir
-                    </button>
+                        <div class="card-text">
+                          <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
+                            Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
+                          <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
+                          }}</small></p>
+                        </div>
+             
+                        <div class="d-flex justify-content-between pt-2">
+                          <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">
+                            Excluir
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Estado vazio para concluídas -->
+          <div v-else class="text-center empty-column">
+            <div class="card mx-auto">
+              <div class="card-body text-center">
+                <h5>Nenhuma tarefa concluída</h5>
+                <p class="text-muted">Arraste tarefas pendentes para cá para concluí-las</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- Estado completamente vazio -->
       <div v-if="pendingTasks.length === 0 && completedTasks.length === 0" class="text-center">
         <div class="card mx-auto" style="max-width: 400px;">
           <div class="card-body text-center">
@@ -664,6 +581,59 @@ if (typeof window !== 'undefined') {
   border: 2px dashed #198754;
   background-color: rgba(25, 135, 84, 0.05);
   transform: scale(1.02);
+}
+
+.drop-zone {
+  min-height: 200px;
+  border: 2px dashed transparent;
+  border-radius: 8px;
+  padding: 10px;
+  transition: all 0.3s ease;
+}
+
+.drop-zone.drag-over-column {
+  border-color: #198754;
+  background-color: rgba(25, 135, 84, 0.05);
+}
+
+.pending-drop-zone.drag-over-column {
+  border-color: #ffc107;
+  background-color: rgba(255, 193, 7, 0.05);
+}
+
+.completed-drop-zone.drag-over-column {
+  border-color: #198754;
+  background-color: rgba(25, 135, 84, 0.05);
+}
+
+.empty-column {
+  opacity: 0.7;
+}
+
+.empty-column .card {
+  border: 2px dashed #dee2e6;
+  background-color: #f8f9fa;
+}
+
+.task-card, .completed-task {
+  transition: all 0.3s ease;
+  cursor: grab;
+  user-select: none;
+}
+
+.task-card:hover, .completed-task:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.task-card:active, .completed-task:active {
+  cursor: grabbing;
+}
+
+.task-card.dragging, .completed-task.dragging {
+  opacity: 0.6;
+  transform: rotate(3deg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .horizontal-scroll-container {
