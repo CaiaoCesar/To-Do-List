@@ -11,7 +11,7 @@ defineProps({
   <div class="header-content">
     <h1 class="text-center mb-3"><strong>{{ msg }}</strong></h1>
     <p class="lead text-center">
-      Bem-vindo ao CommitDone! Sua branch de tarefas está esperando por um push de produtividade 💻🚀!
+      Bem-vindo ao CommitDone! Sua branch de tarefas está esperando por um push de produtividade <FontAwesomeIcon icon="laptop" /> <FontAwesomeIcon icon="rocket" />!
     </p>
   </div>
 </template>

@@ -3,7 +3,7 @@
     <div class="footer-content">
       <p><strong>Desenvolvido por</strong><a href="https://github.com/caiaocesar"
           class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">
-          Caio César <img id="github-logo" src="../assets/github.png" alt="Imagem Github" width="20" height="20"></a></p>
+          Caio César <FontAwesomeIcon :icon="['fab', 'github']" style="color: #1a1d23;" /></a></p>
     </div>
   </div>
 </template>

@@ -16,7 +16,7 @@ function onDragStart(task, event) {
   draggedTask.value = task;
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', task.id);
-  
+
   // ✅ CORREÇÃO: Adiciona classe ao elemento correto
   const card = event.target.closest('.task-card') || event.target;
   card.classList.add('dragging');
@@ -25,10 +25,10 @@ function onDragStart(task, event) {
 function onDragOver(event, index) {
   event.preventDefault();
   dragOverIndex.value = index;
-  
+
   const cards = document.querySelectorAll('.task-card');
   cards.forEach(card => card.classList.remove('drag-over'));
-  
+
   // ✅ CORREÇÃO: Adiciona classe ao card sob o cursor
   const targetCard = event.target.closest('.task-card');
   if (targetCard) {
@@ -46,14 +46,14 @@ function onDragLeave(event) {
 
 function onDrop(event, targetIndex) {
   event.preventDefault();
-  
+
   const cards = document.querySelectorAll('.task-card');
   cards.forEach(card => card.classList.remove('drag-over'));
-  
+
   if (draggedTask.value) {
     reorderPendingTasks(draggedTask.value, targetIndex);
   }
-  
+
   draggedTask.value = null;
   dragOverIndex.value = null;
 }
@@ -63,7 +63,7 @@ function onDragStartCompleted(task, event) {
   draggedTask.value = task;
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', task.id);
-  
+
   const card = event.target.closest('.completed-task') || event.target;
   card.classList.add('dragging');
 }
@@ -71,10 +71,10 @@ function onDragStartCompleted(task, event) {
 function onDragOverCompleted(event, index) {
   event.preventDefault();
   dragOverIndex.value = index;
-  
+
   const cards = document.querySelectorAll('.completed-task');
   cards.forEach(card => card.classList.remove('drag-over'));
-  
+
   const targetCard = event.target.closest('.completed-task');
   if (targetCard) {
     targetCard.classList.add('drag-over');
@@ -90,14 +90,14 @@ function onDragLeaveCompleted(event) {
 
 function onDropCompleted(event, targetIndex) {
   event.preventDefault();
-  
+
   const cards = document.querySelectorAll('.completed-task');
   cards.forEach(card => card.classList.remove('drag-over'));
-  
+
   if (draggedTask.value) {
     reorderCompletedTasks(draggedTask.value, targetIndex);
   }
-  
+
   draggedTask.value = null;
   dragOverIndex.value = null;
 }
@@ -107,7 +107,7 @@ function onDragEnd(event) {
   allCards.forEach(card => {
     card.classList.remove('dragging', 'drag-over');
   });
-  
+
   draggedTask.value = null;
   dragOverIndex.value = null;
 }
@@ -115,13 +115,13 @@ function onDragEnd(event) {
 // ✅ REORDENAR TAREFAS PENDENTES (CORRIGIDO)
 function reorderPendingTasks(task, newIndex) {
   const currentIndex = pendingTasks.value.findIndex(t => t.id === task.id);
-  
+
   if (currentIndex === -1 || currentIndex === newIndex) return;
-  
+
   // ✅ CORREÇÃO: Lógica simplificada e corrigida
   // Remove a tarefa da posição atual
   const [movedTask] = pendingTasks.value.splice(currentIndex, 1);
-  
+
   // ✅ CORREÇÃO: Insere na nova posição corretamente
   if (newIndex >= pendingTasks.value.length) {
     pendingTasks.value.push(movedTask);
@@ -132,7 +132,7 @@ function reorderPendingTasks(task, newIndex) {
     const adjustedIndex = newIndex > currentIndex ? newIndex : newIndex;
     pendingTasks.value.splice(adjustedIndex, 0, movedTask);
   }
-  
+
   saveReorderedTasks();
 }
 
@@ -151,11 +151,11 @@ function saveReorderedTasks() {
 // ✅ REORDENAR TAREFAS CONCLUÍDAS
 function reorderCompletedTasks(task, newIndex) {
   const currentIndex = completedTasks.value.findIndex(t => t.id === task.id);
-  
+
   if (currentIndex === -1 || currentIndex === newIndex) return;
-  
+
   const [movedTask] = completedTasks.value.splice(currentIndex, 1);
-  
+
   if (newIndex >= completedTasks.value.length) {
     completedTasks.value.push(movedTask);
   } else if (newIndex < 0) {
@@ -163,7 +163,7 @@ function reorderCompletedTasks(task, newIndex) {
   } else {
     completedTasks.value.splice(newIndex, 0, movedTask);
   }
-  
+
   saveReorderedCompletedTasks();
 }
 
@@ -182,14 +182,14 @@ function saveReorderedCompletedTasks() {
 // ✅ MÉTODO ALTERNATIVO MAIS ROBUSTO PARA REORDENAÇÃO
 function reorderTasksSmart(task, newIndex, tasksArray) {
   const currentIndex = tasksArray.findIndex(t => t.id === task.id);
-  
+
   if (currentIndex === -1 || currentIndex === newIndex) return tasksArray;
-  
+
   // Cria uma nova array para não mutar a original diretamente
   const newArray = [...tasksArray];
   const [movedTask] = newArray.splice(currentIndex, 1);
   newArray.splice(newIndex, 0, movedTask);
-  
+
   return newArray;
 }
 
@@ -509,24 +509,15 @@ if (typeof window !== 'undefined') {
           <FontAwesomeIcon icon="fa-solid fa-clock" class="me-2 text-warning" />
           Tarefas Pendentes: {{ pendingTasks.length }}
           <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-            📍 Arraste em qualquer direção para reordenar
+            <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" /> Arraste horizontalmente para
+            reordenar
           </small>
         </h3>
         <div class="row justify-content-start g-3">
-          <div 
-            v-for="(task, index) in pendingTasks" 
-            :key="task.id" 
-            class="col-12 col-md-6 col-lg-4 col-xl-3"
-          >
-            <div 
-              class="card h-100 task-card"
-              draggable="true"
-              @dragstart="onDragStart(task, $event)"
-              @dragover="onDragOver($event, index)"
-              @dragleave="onDragLeave"
-              @drop="onDrop($event, index)"
-              @dragend="onDragEnd"
-            >
+          <div v-for="(task, index) in pendingTasks" :key="task.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
+            <div class="card h-100 task-card" draggable="true" @dragstart="onDragStart(task, $event)"
+              @dragover="onDragOver($event, index)" @dragleave="onDragLeave" @drop="onDrop($event, index)"
+              @dragend="onDragEnd">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                   <span class="badge" :class="getPriorityBadgeClass(task.priority)">
@@ -541,7 +532,7 @@ if (typeof window !== 'undefined') {
                   <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
                     Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
                   <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
-                      }}</small></p>
+                  }}</small></p>
                 </div>
 
                 <div class="d-flex justify-content-between pt-2">
@@ -564,25 +555,16 @@ if (typeof window !== 'undefined') {
           <FontAwesomeIcon icon="fa-solid fa-check-circle" class="me-2 text-success" />
           Tarefas Concluídas: {{ completedTasks.length }}
           <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-            📍 Arraste horizontalmente para reordenar
+            <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" /> Arraste horizontalmente para
+            reordenar
           </small>
         </h3>
         <div class="horizontal-scroll-container">
           <div class="horizontal-scroll-content">
-            <div 
-              v-for="(task, index) in completedTasks" 
-              :key="task.id" 
-              class="horizontal-card"
-            >
-              <div 
-                class="card h-100 completed-task"
-                draggable="true"
-                @dragstart="onDragStartCompleted(task, $event)"
-                @dragover="onDragOverCompleted($event, index)"
-                @dragleave="onDragLeaveCompleted"
-                @drop="onDropCompleted($event, index)"
-                @dragend="onDragEnd"
-              >
+            <div v-for="(task, index) in completedTasks" :key="task.id" class="horizontal-card">
+              <div class="card h-100 completed-task" draggable="true" @dragstart="onDragStartCompleted(task, $event)"
+                @dragover="onDragOverCompleted($event, index)" @dragleave="onDragLeaveCompleted"
+                @drop="onDropCompleted($event, index)" @dragend="onDragEnd">
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-start mb-2">
                     <span class="badge bg-success">Concluída</span>
@@ -595,7 +577,7 @@ if (typeof window !== 'undefined') {
                     <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
                       Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
                     <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
-                        }}</small></p>
+                    }}</small></p>
                   </div>
 
                   <div class="d-flex justify-content-between pt-2">

@@ -12,9 +12,6 @@ import TheFooter from './components/TheFooter.vue';
           <div class="col-auto">
             <TheHeader msg="CommitDone" />
           </div>
-          <div class="col-auto">
-            <img class="logo" alt="CommitDone logo" src="./assets/logo.png" width="50" height="50" />
-          </div>
         </div>
       </div>
     </header>
