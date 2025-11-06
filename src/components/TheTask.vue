@@ -148,7 +148,7 @@ function saveTask() {
     });
 
     Swal.fire({
-      title: "✅ Tarefa Salva!",
+      title: "Tarefa Salva!",
       text: "Sua tarefa foi adicionada com sucesso.",
       icon: "success",
       width: 320,
@@ -206,11 +206,11 @@ function triggerCelebration() {
   });
 
   Swal.fire({
-    title: '🎉 Missão Cumprida!',
+    title: '<i class="fa-solid fa-bullhorn fa-beat-fade" style="color: #e00b0b;"></i> Missão Cumprida!',
     html: `
       <div style="text-align: center;">
         <p style="font-size: 1.2rem; margin-bottom: 1rem;"><strong>Parabéns!</strong> <br>Você concluiu mais uma tarefa!</p>
-        <div style="font-size: 3rem;">🏆</div>
+        <div style="font-size: 3rem;"><i class="fa-solid fa-trophy fa-fade" style="color: #efe706;"></i></div>
       </div>
     `,
     width: 400,
@@ -218,7 +218,8 @@ function triggerCelebration() {
     color: 'white',
     showConfirmButton: true,
     confirmButtonText: 'Continuar',
-    confirmButtonColor: '#ffc107'
+    confirmButtonColor: '#ffc107',
+    allowHtml: true
   });
 }
 
@@ -238,13 +239,13 @@ function completeTask(taskId) {
 
 function triggerReopenMessage() {
   Swal.fire({
-    title: '↩️ Tarefa Reaberta',
+    title: '<i class="fa-solid fa-arrow-rotate-left fa-beat" style="color: #74C0FC;"></i> Tarefa Reaberta',
     html: `
       <div style="text-align: center;">
         <p style="font-size: 1.1rem; margin-bottom: 1rem;">
           A tarefa foi movida de volta para <strong>pendentes</strong>.
         </p>
-        <div style="font-size: 2.5rem;">📋</div>
+        <div style="font-size: 2.5rem;"><i class="fa-solid fa-clipboard-list fa-bounce" style="color: #edf1f7;"></i></div>
       </div>
     `,
     width: 380,
@@ -254,7 +255,8 @@ function triggerReopenMessage() {
     confirmButtonText: 'Entendi',
     confirmButtonColor: '#1976d2',
     timer: 2500,
-    timerProgressBar: true
+    timerProgressBar: true,
+    allowHtml: true
   });
 }
 
