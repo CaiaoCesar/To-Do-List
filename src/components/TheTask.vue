@@ -11,7 +11,7 @@ const completedTasks = ref([]);
 const draggedTask = ref(null);
 const dragSource = ref(null);
 
-// ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS 
+// ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS
 function onDragStart(task, event, source) {
   draggedTask.value = task;
   dragSource.value = source;
@@ -26,7 +26,7 @@ function onDragStart(task, event, source) {
 function onDragOverColumn(event) {
   event.preventDefault();
   event.dataTransfer.dropEffect = 'move';
-  
+
   // Adiciona efeito visual na coluna de destino
   const dropZone = event.currentTarget;
   dropZone.classList.add('drag-over-column');
@@ -35,7 +35,7 @@ function onDragOverColumn(event) {
 // ✅ DROP ENTRE COLUNAS (CONCLUIR/REABRIR)
 function onDropColumn(event, targetColumn) {
   event.preventDefault();
-  
+
   // Remove efeitos visuais
   document.querySelectorAll('.drop-zone').forEach(zone => {
     zone.classList.remove('drag-over-column');
@@ -62,11 +62,11 @@ function onDropColumn(event, targetColumn) {
 function onDragEnd() {
   const allCards = document.querySelectorAll('.task-card, .completed-task');
   const allDropZones = document.querySelectorAll('.drop-zone');
-  
+
   allCards.forEach(card => {
     card.classList.remove('dragging', 'drag-over');
   });
-  
+
   allDropZones.forEach(zone => {
     zone.classList.remove('drag-over-column');
   });
@@ -206,11 +206,11 @@ function triggerCelebration() {
   });
 
   Swal.fire({
-    title: '<i class="fa-solid fa-bullhorn fa-beat-fade" style="color: #e00b0b;"></i> Missão Cumprida!',
+    title: '📢 Missão Cumprida!',
     html: `
       <div style="text-align: center;">
         <p style="font-size: 1.2rem; margin-bottom: 1rem;"><strong>Parabéns!</strong> <br>Você concluiu mais uma tarefa!</p>
-        <div style="font-size: 3rem;"><i class="fa-solid fa-trophy fa-fade" style="color: #efe706;"></i></div>
+        <div style="font-size: 3rem;">🏆</div>
       </div>
     `,
     width: 400,
@@ -219,7 +219,6 @@ function triggerCelebration() {
     showConfirmButton: true,
     confirmButtonText: 'Continuar',
     confirmButtonColor: '#ffc107',
-    allowHtml: true
   });
 }
 
@@ -239,13 +238,13 @@ function completeTask(taskId) {
 
 function triggerReopenMessage() {
   Swal.fire({
-    title: '<i class="fa-solid fa-arrow-rotate-left fa-beat" style="color: #74C0FC;"></i> Tarefa Reaberta',
+    title: '↩ Tarefa Reaberta',
     html: `
       <div style="text-align: center;">
         <p style="font-size: 1.1rem; margin-bottom: 1rem;">
           A tarefa foi movida de volta para <strong>pendentes</strong>.
         </p>
-        <div style="font-size: 2.5rem;"><i class="fa-solid fa-clipboard-list fa-bounce" style="color: #edf1f7;"></i></div>
+        <div style="font-size: 2.5rem;">📝</div>
       </div>
     `,
     width: 380,
@@ -256,7 +255,6 @@ function triggerReopenMessage() {
     confirmButtonColor: '#1976d2',
     timer: 2500,
     timerProgressBar: true,
-    allowHtml: true
   });
 }
 
@@ -394,20 +392,20 @@ if (typeof window !== 'undefined') {
               <FontAwesomeIcon icon="clock" class="me-2 text-warning" />
               Tarefas Pendentes: {{ pendingTasks.length }}
               <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-                <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" /> 
+                <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" />
                 Mova a tarefa para mudar de estado e marcar como concluída.
               </small>
             </h3>
-            
+
             <!-- Área de Drop para Pendentes -->
-            <div class="drop-zone pending-drop-zone" 
+            <div class="drop-zone pending-drop-zone"
                  @dragover="onDragOverColumn($event)"
                  @drop="onDropColumn($event, 'pending')">
-              
+
               <div class="row justify-content-start g-3">
-                <div v-for="task in pendingTasks" :key="task.id" 
+                <div v-for="task in pendingTasks" :key="task.id"
                      class="col-12 col-md-6 col-xl-6">
-                  <div class="card h-100 task-card" draggable="true" 
+                  <div class="card h-100 task-card" draggable="true"
                        @dragstart="onDragStart(task, $event, 'pending')"
                        @dragend="onDragEnd">
                     <div class="card-body">
@@ -457,7 +455,7 @@ if (typeof window !== 'undefined') {
               <FontAwesomeIcon icon="check-circle" class="me-2 text-success" />
               Tarefas Concluídas: {{ completedTasks.length }}
               <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-                <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" /> 
+                <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" />
                 Mova a tarefa para reabrir e assim retornar o estado para pendente.
               </small>
             </h3>
@@ -466,7 +464,7 @@ if (typeof window !== 'undefined') {
             <div class="drop-zone completed-drop-zone"
                  @dragover="onDragOverColumn($event)"
                  @drop="onDropColumn($event, 'completed')">
-              
+
               <div class="horizontal-scroll-container">
                 <div class="horizontal-scroll-content">
                   <div v-for="task in completedTasks" :key="task.id" class="horizontal-card">
@@ -487,7 +485,7 @@ if (typeof window !== 'undefined') {
                           <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
                           }}</small></p>
                         </div>
-             
+
                         <div class="d-flex justify-content-between pt-2">
                           <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">
                             Excluir
@@ -500,7 +498,7 @@ if (typeof window !== 'undefined') {
               </div>
             </div>
           </div>
-          
+
           <!-- Estado vazio para concluídas -->
           <div v-else class="text-center empty-column">
             <div class="card mx-auto">
@@ -535,6 +533,9 @@ if (typeof window !== 'undefined') {
   transition: all 0.3s ease;
   cursor: grab;
   user-select: none;
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 50%); 
+  border: 1px solid #ffeaa7;
+  border-left: 4px solid #ffc107;
 }
 
 .task-card:hover {
@@ -562,6 +563,10 @@ if (typeof window !== 'undefined') {
   cursor: grab;
   user-select: none;
   transition: all 0.3s ease;
+  background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 50%);
+  border: 1px solid #c3e6cb;
+  border-left: 4px solid #28a745; 
+  opacity: 0.95;
 }
 
 .completed-task:hover {
