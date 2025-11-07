@@ -40,5 +40,8 @@ defineProps({
   state: Object
 });
 
-// Use suas funções existentes do TheTask.vue
 </script>
+
+
+
+

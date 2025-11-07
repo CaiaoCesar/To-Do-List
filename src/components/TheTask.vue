@@ -47,7 +47,7 @@ function addCustomState() {
       <input id="stateName" class="swal2-input" placeholder="Nome do estado (ex: Em Andamento)">
       <input id="stateColor" type="color" class="swal2-input" value="#17a2b8">
       <select id="stateIcon" class="swal2-input">
-        <option value="gear">Configuração</option>
+        <option value="gear">Engrenagem</option>
         <option value="rocket">Foguete</option>
         <option value="clock">Relógio</option>
         <option value="hourglass">Ampulheta</option>
@@ -488,11 +488,12 @@ if (typeof window !== 'undefined') {
 <template>
   <div class="d-flex flex-column align-items-center mt-0 w-100">
     <div class="d-flex gap-2 mb-4">
-      <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#modalSave">
+      <button type="button" class="btn btn-success btn-lg text-white" data-bs-toggle="modal" data-bs-target="#modalSave">
+        <FontAwesomeIcon icon="plus" class="text-white me-2" /> 
         Adicionar atividade
       </button>
-      <button type="button" class="btn btn-info btn-lg" @click="addCustomState">
-        <FontAwesomeIcon icon="plus" class="me-2" />
+      <button type="button" class="btn btn-primary btn-lg" @click="addCustomState">
+        <FontAwesomeIcon icon="layer-group" class="text-white me-2" />
         Novo Estado
       </button>
     </div>

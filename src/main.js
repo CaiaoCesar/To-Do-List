@@ -1,40 +1,66 @@
-import './assets/main.css'
+import './assets/main.css';
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import App from './App.vue'
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from './App.vue';
 
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
-// Font Awesome
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
-import { faThumbtack } from '@fortawesome/free-solid-svg-icons'
-import { faFlag } from '@fortawesome/free-solid-svg-icons'
-import { faCalendar } from '@fortawesome/free-solid-svg-icons'
-import { faAlignLeft } from '@fortawesome/free-solid-svg-icons'
-import { faClock } from '@fortawesome/free-solid-svg-icons'
-import { faCheckCircle } from '@fortawesome/free-solid-svg-icons'
-import { faGithub }  from '@fortawesome/free-brands-svg-icons'
-import { faLaptop } from '@fortawesome/free-solid-svg-icons'
-import { faRocket } from '@fortawesome/free-solid-svg-icons'
-import { faArrowsUpDownLeftRight } from '@fortawesome/free-solid-svg-icons'
-import { faHourglassHalf } from '@fortawesome/free-solid-svg-icons'
-import { faPenToSquare } from '@fortawesome/free-solid-svg-icons'
+import { faGithub } from '@fortawesome/free-brands-svg-icons';
 
-// Adicione os ícones que vai usar na library
-library.add(faThumbtack, faFlag, faCalendar, faAlignLeft, faClock, faCheckCircle, faGithub, faLaptop, faRocket, faArrowsUpDownLeftRight, faHourglassHalf, faPenToSquare)
+import {
+  faThumbtack,
+  faFlag,
+  faCalendar,
+  faAlignLeft,
+  faClock,
+  faCheckCircle,
+  faLaptop,
+  faRocket,
+  faArrowsUpDownLeftRight,
+  faHourglass,
+  faHourglassHalf,
+  faPenToSquare,
+  faPlus,
+  faLayerGroup,
+  faGear,
+  faStar,
+  faHeart,
+  faLightbulb,
+  faTrash
+} from '@fortawesome/free-solid-svg-icons';
 
-// Crie a app PRIMEIRO
-const app = createApp(App)
+library.add(
+  faThumbtack,
+  faFlag,
+  faCalendar,
+  faAlignLeft,
+  faClock,
+  faCheckCircle,
+  faGithub,
+  faLaptop,
+  faRocket,
+  faArrowsUpDownLeftRight,
+  faHourglass,
+  faHourglassHalf,
+  faPenToSquare,
+  faPlus,
+  faLayerGroup,
+  faGear,
+  faStar,
+  faHeart,
+  faLightbulb,
+  faTrash
+);
 
-// DEPOIS registre o componente
-app.component('FontAwesomeIcon', FontAwesomeIcon)
+const app = createApp(App);
 
-// DEPOIS use os plugins
-app.use(createPinia())
+app.component('FontAwesomeIcon', FontAwesomeIcon);
 
-// FINALMENTE monte a app
-app.mount('#app')
+app.use(createPinia());
+
+app.mount('#app');
