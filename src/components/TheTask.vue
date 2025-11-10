@@ -87,7 +87,7 @@ function addCustomState() {
       saveCustomStates();
 
       Swal.fire({
-        title: '✅ Estado Criado!',
+        title: 'Estado Criado!',
         text: `"${result.value.name}" foi adicionado com sucesso`,
         icon: 'success',
         timer: 2000,
@@ -325,7 +325,7 @@ function saveTask() {
 
 function getColumnClass() {
   const totalStates = allStates.value.length;
-  
+
   if (totalStates <= 2) {
     return 'col-12 col-lg-6';
   } else if (totalStates === 3) {
@@ -348,7 +348,7 @@ function getStateHint(stateId) {
 function loadTasks() {
   try {
     const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-    
+
     // ✅ MIGRAÇÃO: converter tarefas antigas para novo formato
     const migratedTasks = savedTasks.map(task => {
       if (task.state === undefined) {
@@ -360,14 +360,14 @@ function loadTasks() {
       }
       return task;
     });
-    
+
     allTasks.value = migratedTasks;
-    
+
     // Atualizar localStorage com dados migrados
     if (savedTasks.length > 0 && savedTasks[0].state === undefined) {
       localStorage.setItem("tasks", JSON.stringify(migratedTasks));
     }
-    
+
     // Agrupar tarefas por estado
     pendingTasks.value = getTasksByState('pending');
     completedTasks.value = getTasksByState('completed');
@@ -489,7 +489,7 @@ if (typeof window !== 'undefined') {
   <div class="d-flex flex-column align-items-center mt-0 w-100">
     <div class="d-flex gap-2 mb-4">
       <button type="button" class="btn btn-success btn-lg text-white" data-bs-toggle="modal" data-bs-target="#modalSave">
-        <FontAwesomeIcon icon="plus" class="text-white me-2" /> 
+        <FontAwesomeIcon icon="plus" class="text-white me-2" />
         Adicionar atividade
       </button>
       <button type="button" class="btn btn-primary btn-lg" @click="addCustomState">
@@ -506,7 +506,7 @@ if (typeof window !== 'undefined') {
             <h3 class="modal-title">Informações da atividade</h3>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          
+
           <div class="modal-body">
             <div class="mb-3">
               <label class="form-label" for="task">Atividade:</label>
@@ -567,21 +567,21 @@ if (typeof window !== 'undefined') {
     <div class="container mt-4 w-100">
       <div class="row">
         <!-- COLUNAS DINÂMICAS PARA TODOS OS ESTADOS -->
-        <div v-for="state in allStates" :key="state.id" 
-             :class="getColumnClass(state.id)" 
+        <div v-for="state in allStates" :key="state.id"
+             :class="getColumnClass(state.id)"
              class="state-column">
-          
+
           <div class="state-header d-flex justify-content-between align-items-center mb-3">
             <h3 class="text-center mb-0 flex-grow-1">
               <FontAwesomeIcon :icon="state.icon" class="me-2" :style="{ color: state.color }" />
               {{ state.name }}: {{ getTasksByState(state.id).length }}
-              
+
               <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
                 <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" />
                 {{ getStateHint(state.id) }}
               </small>
             </h3>
-            
+
             <!-- Botões de editar/excluir para estados customizados -->
             <div v-if="state.id.startsWith('custom_')" class="state-actions ms-2">
               <button class="btn btn-sm btn-outline-secondary me-1" @click="editState(state)">
@@ -595,24 +595,24 @@ if (typeof window !== 'undefined') {
 
           <!-- Área de Drop para o Estado -->
           <div class="mb-4">
-            <div class="drop-zone" 
+            <div class="drop-zone"
                  :class="`${state.id}-drop-zone`"
                  @dragover="onDragOverColumn($event)"
                  @drop="onDropColumn($event, state.id)"
                  :style="{ borderColor: state.color }">
-              
+
               <div v-if="getTasksByState(state.id).length > 0">
                 <!-- Layout vertical para Pendentes e Custom -->
                 <div v-if="state.id !== 'completed'" class="row justify-content-start g-3">
-                  <div v-for="task in getTasksByState(state.id)" :key="task.id" 
+                  <div v-for="task in getTasksByState(state.id)" :key="task.id"
                        class="col-12 col-md-6 col-xl-12">
-                    <div class="card h-100 task-card" 
+                    <div class="card h-100 task-card"
                          :class="`state-${state.id}`"
                          draggable="true"
                          @dragstart="onDragStart(task, $event, state.id)"
                          @dragend="onDragEnd"
                          :style="{ borderLeftColor: state.color }">
-                      
+
                       <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                           <span class="badge" :class="getPriorityBadgeClass(task.priority)">
@@ -641,16 +641,16 @@ if (typeof window !== 'undefined') {
                     </div>
                   </div>
                 </div>
-                
+
                 <!-- Layout horizontal apenas para Concluídas -->
                 <div v-else class="horizontal-scroll-container">
                   <div class="horizontal-scroll-content">
                     <div v-for="task in getTasksByState(state.id)" :key="task.id" class="horizontal-card">
-                      <div class="card h-100 completed-task" 
+                      <div class="card h-100 completed-task"
                            draggable="true"
                            @dragstart="onDragStart(task, $event, state.id)"
                            @dragend="onDragEnd">
-                        
+
                         <div class="card-body">
                           <div class="d-flex justify-content-between align-items-start mb-2">
                             <span class="badge bg-success">Concluída</span>
