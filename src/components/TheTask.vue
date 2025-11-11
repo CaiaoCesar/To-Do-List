@@ -488,7 +488,8 @@ if (typeof window !== 'undefined') {
 <template>
   <div class="d-flex flex-column align-items-center mt-0 w-100">
     <div class="d-flex gap-2 mb-4">
-      <button type="button" class="btn btn-success btn-lg text-white" data-bs-toggle="modal" data-bs-target="#modalSave">
+      <button type="button" class="btn btn-success btn-lg text-white" data-bs-toggle="modal"
+        data-bs-target="#modalSave">
         <FontAwesomeIcon icon="plus" class="text-white me-2" />
         Adicionar atividade
       </button>
@@ -514,7 +515,8 @@ if (typeof window !== 'undefined') {
                 <span class="input-group-text">
                   <FontAwesomeIcon icon="fa-solid fa-thumbtack" />
                 </span>
-                <input class="form-control" type="text" id="task" placeholder="Título da atividade que deseja realizar" required>
+                <input class="form-control" type="text" id="task" placeholder="Título da atividade que deseja realizar"
+                  required>
               </div>
             </div>
 
@@ -549,7 +551,8 @@ if (typeof window !== 'undefined') {
                 <span class="input-group-text">
                   <FontAwesomeIcon icon="fa-solid fa-align-left" />
                 </span>
-                <textarea class="form-control" id="description" rows="3" placeholder="Descreva o que deseja realizar (opcional)"></textarea>
+                <textarea class="form-control" id="description" rows="3"
+                  placeholder="Descreva o que deseja realizar (opcional)"></textarea>
               </div>
             </div>
           </div>
@@ -562,14 +565,13 @@ if (typeof window !== 'undefined') {
       </div>
     </div>
 
-    <TheProgress :completed-tasks="completedTasks" :pending-tasks="pendingTasks" />
+    <TheProgress :completed-tasks="completedTasks" :pending-tasks="pendingTasks" :all-tasks="allTasks"
+      :custom-states="customStates" />
 
     <div class="container mt-4 w-100">
       <div class="row">
         <!-- COLUNAS DINÂMICAS PARA TODOS OS ESTADOS -->
-        <div v-for="state in allStates" :key="state.id"
-             :class="getColumnClass(state.id)"
-             class="state-column">
+        <div v-for="state in allStates" :key="state.id" :class="getColumnClass(state.id)" class="state-column">
 
           <div class="state-header d-flex justify-content-between align-items-center mb-3">
             <h3 class="text-center mb-0 flex-grow-1">
@@ -595,23 +597,16 @@ if (typeof window !== 'undefined') {
 
           <!-- Área de Drop para o Estado -->
           <div class="mb-4">
-            <div class="drop-zone"
-                 :class="`${state.id}-drop-zone`"
-                 @dragover="onDragOverColumn($event)"
-                 @drop="onDropColumn($event, state.id)"
-                 :style="{ borderColor: state.color }">
+            <div class="drop-zone" :class="`${state.id}-drop-zone`" @dragover="onDragOverColumn($event)"
+              @drop="onDropColumn($event, state.id)" :style="{ borderColor: state.color }">
 
               <div v-if="getTasksByState(state.id).length > 0">
                 <!-- Layout vertical para Pendentes e Custom -->
                 <div v-if="state.id !== 'completed'" class="row justify-content-start g-3">
-                  <div v-for="task in getTasksByState(state.id)" :key="task.id"
-                       class="col-12 col-md-6 col-xl-12">
-                    <div class="card h-100 task-card"
-                         :class="`state-${state.id}`"
-                         draggable="true"
-                         @dragstart="onDragStart(task, $event, state.id)"
-                         @dragend="onDragEnd"
-                         :style="{ borderLeftColor: state.color }">
+                  <div v-for="task in getTasksByState(state.id)" :key="task.id" class="col-12 col-md-6 col-xl-12">
+                    <div class="card h-100 task-card" :class="`state-${state.id}`" draggable="true"
+                      @dragstart="onDragStart(task, $event, state.id)" @dragend="onDragEnd"
+                      :style="{ borderLeftColor: state.color }">
 
                       <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
@@ -646,10 +641,8 @@ if (typeof window !== 'undefined') {
                 <div v-else class="horizontal-scroll-container">
                   <div class="horizontal-scroll-content">
                     <div v-for="task in getTasksByState(state.id)" :key="task.id" class="horizontal-card">
-                      <div class="card h-100 completed-task"
-                           draggable="true"
-                           @dragstart="onDragStart(task, $event, state.id)"
-                           @dragend="onDragEnd">
+                      <div class="card h-100 completed-task" draggable="true"
+                        @dragstart="onDragStart(task, $event, state.id)" @dragend="onDragEnd">
 
                         <div class="card-body">
                           <div class="d-flex justify-content-between align-items-start mb-2">
@@ -662,8 +655,9 @@ if (typeof window !== 'undefined') {
                           <div class="card-text">
                             <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
                               Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
-                            <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
-                            }}</small></p>
+                            <p class="mb-2"><small><strong>Descrição:</strong>
+                                {{ task.description || 'Nenhuma descrição'
+                                }}</small></p>
                           </div>
 
                           <div class="d-flex justify-content-between pt-2">
@@ -776,22 +770,26 @@ if (typeof window !== 'undefined') {
 }
 
 /* Efeitos hover mantidos */
-.task-card:hover, .completed-task:hover {
+.task-card:hover,
+.completed-task:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
-.task-card:active, .completed-task:active {
+.task-card:active,
+.completed-task:active {
   cursor: grabbing;
 }
 
-.task-card.dragging, .completed-task.dragging {
+.task-card.dragging,
+.completed-task.dragging {
   opacity: 0.6;
   transform: rotate(3deg);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-.task-card.drag-over, .completed-task.drag-over {
+.task-card.drag-over,
+.completed-task.drag-over {
   border: 2px dashed #198754;
   background-color: rgba(25, 135, 84, 0.05);
   transform: scale(1.02);
