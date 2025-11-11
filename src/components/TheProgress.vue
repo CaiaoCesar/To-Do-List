@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 
-// ✅ Props atualizados para receber todos os dados
 const props = defineProps({
   completedTasks: {
     type: Array,
@@ -11,29 +10,25 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  allTasks: { // ✅ NOVO: receber todas as tarefas
+  allTasks: {
     type: Array,
     default: () => []
   },
-  customStates: { // ✅ NOVO: receber estados customizados
+  customStates: {
     type: Array,
     default: () => []
   }
 });
 
-// ✅ Estado reativo para o progresso
 const progressPercentage = ref(0);
 const totalTasks = ref(0);
 const completedCount = ref(0);
-const inProgressCount = ref(0); // ✅ NOVO: tarefas em estados customizados
+const customStatesCount = ref(0);
 
-// ✅ Função para calcular o progresso ATUALIZADA
 function calculateProgress() {
   completedCount.value = props.completedTasks.length;
-
-  // ✅ CONTAR tarefas em estados customizados (consideradas "em andamento")
-  inProgressCount.value = props.allTasks.filter(task =>
-    !['pending', 'completed'].includes(task.state)
+  customStatesCount.value = props.allTasks.filter(task =>
+    task.state && task.state.startsWith('custom_')
   ).length;
 
   totalTasks.value = props.allTasks.length;
@@ -41,19 +36,13 @@ function calculateProgress() {
   if (totalTasks.value === 0) {
     progressPercentage.value = 0;
   } else {
-    // ✅ NOVA LÓGICA: considerar estados customizados como progresso parcial
+    // Progresso considera tarefas concluídas + bônus por tarefas em estados customizados
     const baseProgress = (completedCount.value / totalTasks.value) * 100;
-    const inProgressBonus = (inProgressCount.value / totalTasks.value) * 30; // Máximo 30% de bônus
-    progressPercentage.value = Math.min(Math.round(baseProgress + inProgressBonus), 100);
+    const customBonus = (customStatesCount.value / totalTasks.value) * 25; // Bônus de 25%
+    progressPercentage.value = Math.min(Math.round(baseProgress + customBonus), 100);
   }
 }
 
-// ✅ Watcher para recalcular quando os dados mudarem
-watch(() => [props.completedTasks, props.pendingTasks, props.allTasks, props.customStates], () => {
-  calculateProgress();
-}, { deep: true, immediate: true });
-
-// ✅ Função para determinar a cor da barra baseada no progresso
 function getProgressBarClass() {
   if (progressPercentage.value === 0) return 'bg-secondary';
   if (progressPercentage.value < 30) return 'bg-danger';
@@ -62,30 +51,29 @@ function getProgressBarClass() {
   return 'bg-success';
 }
 
-// ✅ Função para determinar o texto do alerta ATUALIZADA
 function getAlertMessage() {
   if (totalTasks.value === 0) {
-    return { message: 'Nenhuma tarefa criada ainda.', type: 'secondary' };
-  }
-  if (progressPercentage.value === 0 && inProgressCount.value === 0) {
-    return { message: 'Você tem tarefas pendentes. Vamos começar!', type: 'danger' };
+    return { message: 'Crie sua primeira tarefa para começar!', type: 'secondary' };
   }
   if (progressPercentage.value === 100) {
-    return { message: 'Parabéns! Todas as tarefas foram concluídas! 🎉', type: 'success' };
+    return { message: 'Excelente! Todas as tarefas concluídas!', type: 'success' };
   }
-  if (inProgressCount.value > 0) {
-    return { message: `Ótimo! ${inProgressCount.value} tarefa(s) em andamento.`, type: 'info' };
+  if (customStatesCount.value > 0) {
+    return { message: `${customStatesCount.value} tarefa(s) em fluxo personalizado!`, type: 'info' };
   }
   if (progressPercentage.value >= 70) {
     return { message: 'Ótimo progresso! Continue assim!', type: 'info' };
   }
   if (progressPercentage.value >= 30) {
-    return { message: 'Bom progresso! Mantenha o ritmo!', type: 'warning' };
+    return { message: 'Bom ritmo! Mantenha o foco!', type: 'warning' };
   }
-  return { message: 'Vamos começar as tarefas!', type: 'danger' };
+  return { message: 'Vamos começar! Organize suas tarefas!', type: 'danger' };
 }
 
-// ✅ Calcular progresso inicial
+watch(() => [props.completedTasks, props.pendingTasks, props.allTasks], () => {
+  calculateProgress();
+}, { deep: true, immediate: true });
+
 onMounted(() => {
   calculateProgress();
 });
@@ -93,14 +81,12 @@ onMounted(() => {
 
 <template>
   <div class="container mt-4">
-    <!-- Alert dinâmico -->
     <div class="alert text-center" :class="`alert-${getAlertMessage().type}`" role="alert">
       <strong>{{ getAlertMessage().message }}</strong>
     </div>
 
-    <!-- Barra de progresso -->
     <div class="d-flex align-items-center justify-content-between mb-3">
-      <h5 class="mb-0 me-3">Progresso Geral:</h5>
+      <h5 class="mb-0 me-3">Progresso das Tarefas:</h5>
       <div class="progress flex-grow-1" style="height: 30px;">
         <div
           class="progress-bar progress-bar-striped progress-bar-animated"
@@ -118,7 +104,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Estatísticas detalhadas ATUALIZADAS -->
     <div class="row text-center mt-3">
       <div class="col-3">
         <div class="card bg-light">
@@ -139,8 +124,8 @@ onMounted(() => {
       <div class="col-3">
         <div class="card bg-info text-white">
           <div class="card-body py-2">
-            <h6 class="card-title mb-1">Estados criados</h6>
-            <span class="fw-bold fs-5">{{ inProgressCount }}</span>
+            <h6 class="card-title mb-1">Em Fluxo</h6>
+            <span class="fw-bold fs-5">{{ customStatesCount }}</span>
           </div>
         </div>
       </div>
@@ -169,5 +154,10 @@ onMounted(() => {
 .card {
   border: none;
   border-radius: 10px;
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
 }
 </style>

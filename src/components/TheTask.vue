@@ -713,77 +713,51 @@ if (typeof window !== 'undefined') {
             <div class="drop-zone" :class="`${state.id}-drop-zone`" @dragover="onDragOverColumn($event)"
               @drop="onDropColumn($event, state.id)" :style="{ borderColor: state.color }">
 
-              <div v-if="getTasksByState(state.id).length > 0">
-                <!-- Layout vertical para Pendentes e Custom -->
-                <div v-if="state.id !== 'completed'" class="row justify-content-start g-3">
-                  <div v-for="task in getTasksByState(state.id)" :key="task.id" class="col-12 col-md-6 col-xl-12">
-                    <div class="card h-100 task-card" :class="`state-${state.id}`" draggable="true"
-                      @dragstart="onDragStart(task, $event, state.id)" @dragend="onDragEnd"
-                      :style="{ borderLeftColor: state.color }">
+              <div v-if="getTasksByState(state.id).length > 0" class="row justify-content-start g-3">
+  <div v-for="task in getTasksByState(state.id)" :key="task.id" class="col-12 col-md-6 col-xl-12">
+    <div class="card h-100 task-card"
+         :class="[`state-${state.id}`, { 'completed-task': state.id === 'completed' }]"
+         draggable="true"
+         @dragstart="onDragStart(task, $event, state.id)"
+         @dragend="onDragEnd"
+         :style="{ borderLeftColor: state.color }">
 
-                      <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                          <span class="badge" :class="getPriorityBadgeClass(task.priority)">
-                            {{ getPriorityText(task.priority) }}
-                          </span>
-                          <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
-                        </div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="badge" :class="getPriorityBadgeClass(task.priority)">
+            {{ getPriorityText(task.priority) }}
+          </span>
+          <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
+        </div>
 
-                        <h5 class="card-title" :class="{ 'text-decoration-line-through': state.id === 'completed' }">
-                          {{ task.title }}
-                        </h5>
+        <h5 class="card-title" :class="{ 'text-decoration-line-through': state.id === 'completed' }">
+          {{ task.title }}
+        </h5>
 
-                        <div class="card-text">
-                          <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
-                            Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
-                          <p class="mb-2"><small><strong>Descrição:</strong> {{ task.description || 'Nenhuma descrição'
-                          }}</small></p>
-                        </div>
+        <div class="card-text">
+          <p class="mb-1">
+            <small>
+              <strong>Data/Hora:</strong>
+              {{ task.dateTime ? new Date(task.dateTime).toLocaleString() : 'Não definida' }}
+            </small>
+          </p>
+          <p class="mb-2">
+            <small>
+              <strong>Descrição:</strong>
+              {{ task.description || 'Nenhuma descrição' }}
+            </small>
+          </p>
+        </div>
 
-                        <div class="d-flex justify-content-between pt-2">
-                          <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">
-                            Excluir
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Layout horizontal apenas para Concluídas -->
-                <div v-else class="horizontal-scroll-container">
-                  <div class="horizontal-scroll-content">
-                    <div v-for="task in getTasksByState(state.id)" :key="task.id" class="horizontal-card">
-                      <div class="card h-100 completed-task" draggable="true"
-                        @dragstart="onDragStart(task, $event, state.id)" @dragend="onDragEnd">
-
-                        <div class="card-body">
-                          <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="badge bg-success">Concluída</span>
-                            <small class="text-muted">{{ new Date(task.createdAt).toLocaleDateString() }}</small>
-                          </div>
-
-                          <h6 class="card-title text-decoration-line-through">{{ task.title }}</h6>
-
-                          <div class="card-text">
-                            <p class="mb-1"><small><strong>Data/Hora:</strong> {{ task.dateTime ? new
-                              Date(task.dateTime).toLocaleString() : 'Não definida' }}</small></p>
-                            <p class="mb-2"><small><strong>Descrição:</strong>
-                                {{ task.description || 'Nenhuma descrição'
-                                }}</small></p>
-                          </div>
-
-                          <div class="d-flex justify-content-between pt-2">
-                            <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">
-                              Excluir
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <div class="d-flex justify-content-between pt-2">
+          <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
               <!-- Estado vazio -->
               <div v-else class="text-center empty-column">
@@ -915,50 +889,6 @@ if (typeof window !== 'undefined') {
 .empty-column .card {
   border: 2px dashed #dee2e6;
   background-color: #f8f9fa;
-}
-
-.horizontal-scroll-container {
-  width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 10px 0;
-  white-space: nowrap;
-}
-
-.horizontal-scroll-content {
-  display: inline-flex;
-  gap: 15px;
-  padding: 0 10px;
-}
-
-.horizontal-card {
-  display: inline-block;
-  width: 280px;
-  flex-shrink: 0;
-}
-
-.horizontal-scroll-container::-webkit-scrollbar {
-  height: 8px;
-}
-
-.horizontal-scroll-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.horizontal-scroll-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
-
-.horizontal-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-.horizontal-card .card-text,
-.horizontal-card .card-title {
-  white-space: normal;
-  word-wrap: break-word;
 }
 
 /* ESTILOS PARA DRAG & DROP DE ESTADOS */
