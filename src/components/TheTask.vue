@@ -14,10 +14,12 @@ const customStates = ref([]);
 const pendingTasks = ref([]);
 const completedTasks = ref([]);
 const allTasks = ref([]);
+const draggedState = ref(null);
 
 // ✅ VARIÁVEIS PARA DRAG & DROP
 const draggedTask = ref(null);
 const dragSource = ref(null);
+
 
 // ✅ CARREGAR ESTADOS CUSTOMIZADOS
 function loadCustomStates() {
@@ -166,6 +168,95 @@ function deleteState(state) {
   });
 }
 
+// ✅ DRAG & DROP PARA REORDENAR ESTADOS
+function onStateDragStart(state, event) {
+  draggedState.value = state;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', state.id);
+
+  const header = event.target.closest('.state-header');
+  if (header) {
+    header.classList.add('state-dragging');
+  }
+}
+
+function onStateDragOver(event, targetState) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+
+  if (!draggedState.value || draggedState.value.id === targetState.id) return;
+
+  const header = event.target.closest('.state-header');
+  if (header) {
+    header.classList.add('state-drag-over');
+  }
+}
+
+function onStateDragLeave(event) {
+  const header = event.target.closest('.state-header');
+  if (header) {
+    header.classList.remove('state-drag-over');
+  }
+}
+
+function onStateDrop(event, targetState) {
+  event.preventDefault();
+
+  document.querySelectorAll('.state-header').forEach(header => {
+    header.classList.remove('state-drag-over', 'state-dragging');
+  });
+
+  if (!draggedState.value || draggedState.value.id === targetState.id) return;
+
+  reorderStates(draggedState.value, targetState);
+  draggedState.value = null;
+}
+
+function onStateDragEnd() {
+  document.querySelectorAll('.state-header').forEach(header => {
+    header.classList.remove('state-drag-over', 'state-dragging');
+  });
+  draggedState.value = null;
+}
+
+// ✅ REORDENAR ESTADOS
+function reorderStates(draggedState, targetState) {
+  // Não permitir reordenar estados padrão
+  if (!draggedState.id.startsWith('custom_') || !targetState.id.startsWith('custom_')) {
+    Swal.fire({
+      title: 'Atenção!',
+      text: 'Estados padrão (Pendentes e Concluídas) não podem ser reordenados.',
+      icon: 'warning',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  const draggedIndex = customStates.value.findIndex(s => s.id === draggedState.id);
+  const targetIndex = customStates.value.findIndex(s => s.id === targetState.id);
+
+  if (draggedIndex === -1 || targetIndex === -1) return;
+
+  // Remove o estado arrastado
+  const [movedState] = customStates.value.splice(draggedIndex, 1);
+
+  // Insere na nova posição
+  customStates.value.splice(targetIndex, 0, movedState);
+
+  // Atualiza a ordem numérica
+  updateStatesOrder();
+
+  saveCustomStates();
+}
+
+// ✅ ATUALIZAR ORDEM NUMÉRICA DOS ESTADOS
+function updateStatesOrder() {
+  customStates.value.forEach((state, index) => {
+    state.order = index + 1; // +1 porque pending tem order 0
+  });
+}
+
 // ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS
 function onDragStart(task, event, source) {
   draggedTask.value = task;
@@ -222,6 +313,12 @@ function moveTaskToState(taskId, newState) {
   } else if (newState === 'pending' && dragSource.value !== 'pending') {
     triggerReopenMessage();
   }
+}
+
+// ✅ OBTER POSIÇÃO DO ESTADO
+function getStatePosition(state) {
+  const index = allStates.value.findIndex(s => s.id === state.id);
+  return index + 1; // Posição começa em 1
 }
 
 // ✅ FUNÇÕES DE DRAG & DROP PARA TAREFAS CONCLUÍDAS (HORIZONTAL)
@@ -573,26 +670,42 @@ if (typeof window !== 'undefined') {
         <!-- COLUNAS DINÂMICAS PARA TODOS OS ESTADOS -->
         <div v-for="state in allStates" :key="state.id" :class="getColumnClass(state.id)" class="state-column">
 
-          <div class="state-header d-flex justify-content-between align-items-center mb-3">
-            <h3 class="text-center mb-0 flex-grow-1">
-              <FontAwesomeIcon :icon="state.icon" class="me-2" :style="{ color: state.color }" />
-              {{ state.name }}: {{ getTasksByState(state.id).length }}
+          <div class="state-header d-flex justify-content-between align-items-center mb-3"
+            :draggable="state.id.startsWith('custom_')" @dragstart="onStateDragStart(state, $event)"
+            @dragover="onStateDragOver($event, state)" @dragleave="onStateDragLeave($event)"
+            @drop="onStateDrop($event, state)" @dragend="onStateDragEnd">
 
-              <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
-                <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" />
-                {{ getStateHint(state.id) }}
-              </small>
-            </h3>
+            <div class="d-flex align-items-center flex-grow-1">
+              <!-- Ícone de arrastar apenas para estados customizados -->
+              <FontAwesomeIcon v-if="state.id.startsWith('custom_')" icon="grip-vertical"
+                class="me-2 text-muted state-handle" style="cursor: grab;" />
+
+              <h3 class="text-center mb-0 flex-grow-1">
+                <FontAwesomeIcon :icon="state.icon" class="me-2" :style="{ color: state.color }" />
+                {{ state.name }}: {{ getTasksByState(state.id).length }}
+
+                <small class="text-muted d-block mt-1" style="font-size: 0.8rem;">
+                  <FontAwesomeIcon icon="arrows-up-down-left-right" style="color: #ef7401;" />
+                  {{ getStateHint(state.id) }}
+                  <span v-if="state.id.startsWith('custom_')" class="badge bg-light text-dark ms-1">
+                    Posição: {{ getStatePosition(state) }}
+                  </span>
+                </small>
+              </h3>
+            </div>
 
             <!-- Botões de editar/excluir para estados customizados -->
             <div v-if="state.id.startsWith('custom_')" class="state-actions ms-2">
-              <button class="btn btn-sm btn-outline-secondary me-1" @click="editState(state)">
-                <FontAwesomeIcon icon="edit" />
-              </button>
-              <button class="btn btn-sm btn-outline-danger" @click="deleteState(state)">
-                <FontAwesomeIcon icon="trash" />
-              </button>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" @click="editState(state)" title="Editar estado">
+                  <FontAwesomeIcon icon="edit" />
+                </button>
+                <button class="btn btn-outline-danger" @click="deleteState(state)" title="Excluir estado">
+                  <FontAwesomeIcon icon="trash" />
+                </button>
+              </div>
             </div>
+
           </div>
 
           <!-- Área de Drop para o Estado -->
@@ -846,6 +959,48 @@ if (typeof window !== 'undefined') {
 .horizontal-card .card-title {
   white-space: normal;
   word-wrap: break-word;
+}
+
+/* ESTILOS PARA DRAG & DROP DE ESTADOS */
+.state-header {
+  transition: all 0.3s ease;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: default;
+}
+
+.state-header[draggable="true"] {
+  cursor: grab;
+}
+
+.state-header.state-dragging {
+  opacity: 0.6;
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: rotate(2deg);
+}
+
+.state-header.state-drag-over {
+  border: 2px dashed #007bff;
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.state-handle:hover {
+  color: #007bff !important;
+}
+
+.state-actions {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.state-header:hover .state-actions {
+  opacity: 1;
+}
+
+/* Indicador visual da ordem */
+.state-order-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
 }
 
 /* Responsividade para múltiplas colunas */

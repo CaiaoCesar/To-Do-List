@@ -31,7 +31,8 @@ import {
   faStar,
   faHeart,
   faLightbulb,
-  faTrash
+  faTrash,
+  faGripVertical
 } from '@fortawesome/free-solid-svg-icons';
 
 library.add(
@@ -54,7 +55,8 @@ library.add(
   faStar,
   faHeart,
   faLightbulb,
-  faTrash
+  faTrash,
+  faGripVertical
 );
 
 const app = createApp(App);
